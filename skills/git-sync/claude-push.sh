@@ -41,11 +41,18 @@ echo ""
 echo "Pushed to origin/$BRANCH."
 
 # --- Optional: Claude Code shell hygiene (safe to delete these lines) ---
-# Keeps claude-push / claude-pull resolving as real PATH commands even if Claude
-# Code's cached shell snapshot goes stale, then clears that snapshot so the next
-# session rebuilds it. Idempotent. See setup.md, "Appendix," for why this helps.
+# Keeps claude-push / claude-pull resolving as real PATH commands whatever the
+# shell has loaded. Idempotent. See setup.md, "Appendix," for why this helps.
 mkdir -p "$HOME/.local/bin"
 ln -sf "$HOME/.claude/claude-pull.sh" "$HOME/.local/bin/claude-pull"
 ln -sf "$HOME/.claude/claude-push.sh" "$HOME/.local/bin/claude-push"
-rm -f "$HOME/.claude/shell-snapshots/"*.sh 2>/dev/null || true
-echo "Refreshed PATH links and cleared the shell snapshot (next session rebuilds it)."
+# DO NOT ADD A LINE HERE THAT DELETES ~/.claude/shell-snapshots/*.sh. This script
+# carried one until 2026-08-21 and it was actively harmful. Every Claude Code
+# session already running re-reads its own snapshot file on EVERY Bash call, so
+# deleting it strips those sessions of whatever their shell config defined,
+# including any safety wrapper around rm. It bought nothing in return: verified
+# against the CLI at 2.1.238, a new session always writes a fresh snapshot from
+# the current shell config and never reuses an existing one, and the CLI already
+# handles retention itself (each session removes its own file at exit, and the
+# cleanupPeriodDays sweep clears strays).
+echo "Refreshed PATH links."

@@ -38,5 +38,9 @@ fi
 mkdir -p "$HOME/.local/bin"
 ln -sf "$HOME/.claude/claude-pull.sh" "$HOME/.local/bin/claude-pull"
 ln -sf "$HOME/.claude/claude-push.sh" "$HOME/.local/bin/claude-push"
-rm -f "$HOME/.claude/shell-snapshots/"*.sh 2>/dev/null || true
-echo "Refreshed PATH links and cleared the shell snapshot (next session rebuilds it)."
+# DO NOT ADD A LINE HERE THAT DELETES ~/.claude/shell-snapshots/*.sh. See the same
+# note in claude-push.sh. In short: a running Claude Code session re-reads its own
+# snapshot on every Bash call, so deleting it strips that session of whatever its
+# shell config defined, including any safety wrapper around rm, and it buys nothing,
+# because a new session always writes a fresh one and the CLI handles retention.
+echo "Refreshed PATH links."
