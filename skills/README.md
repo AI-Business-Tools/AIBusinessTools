@@ -27,7 +27,7 @@ Each skill is a self-contained workflow that Claude Code loads on demand when yo
 | [split-pdf](split-pdf/) | Split and deeply read academic PDFs in 4-page chunks to avoid shallow comprehension |
 | [summary-academic](summary-academic/) | Summarize an academic paper into a fixed nine-section, citation-backed structure |
 | [summary-general](summary-general/) | Summarize a news article, blog post, video, or podcast, keeping the statistics and flagging weak claims |
-| [knowledge-base](knowledge-base/) | Process, index, summarize, search, and query a personal document library, and build slides from any item |
+| [knowledge-base](knowledge-base/) | Process, index, summarize, search, query, and health-check a personal document library, and build slides from any item |
 | [knowledge-base-update](knowledge-base-update/) | Sync the knowledge-base index with disk; run a periodic health check |
 
 ### Process Guides
@@ -42,7 +42,7 @@ Each skill is a self-contained workflow that Claude Code loads on demand when yo
 
 | Skill | What It Does |
 |-------|-------------|
-| [skill-audit](skill-audit/) | Audit recent session transcripts for recurring friction and recommend conservative, report-only changes to your skills and configuration |
+| [skill-audit](skill-audit/) | Audit recent session transcripts for recurring friction, sweep your skill files for a rule stated in more than one place, and recommend conservative, report-only changes |
 
 ## Dependencies
 

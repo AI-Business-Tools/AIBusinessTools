@@ -1,6 +1,6 @@
 ---
 name: skill-audit
-description: Audit recent Claude Code session transcripts for recurring friction (repeated corrections, routing misfires, repeated reprompts, enforcement gaps, post-upgrade regressions) and recommend conservative changes to your personal skills, CLAUDE.md, protocols, or settings. Report-only: it proposes, it never edits. Prefers no change. Triggers on "skill audit", "audit my skills", "audit recent sessions".
+description: Audit recent Claude Code session transcripts for recurring friction (repeated corrections, routing misfires, repeated reprompts, enforcement gaps, post-upgrade regressions) and sweep your skill files for a standard stated in more than one place, orphaned reference files, and broken pointers, then recommend conservative changes to your personal skills, CLAUDE.md, protocols, or settings. Report-only: it proposes, it never edits. Prefers no change. Triggers on "skill audit", "audit my skills", "audit recent sessions".
 triggers: skill audit, audit my skills, audit recent sessions, audit skills, skill opportunities, audit recent work
 allowed-tools: Bash, Read, Glob, Grep, Agent
 model: sonnet
@@ -35,9 +35,11 @@ Read `declined.md` and `changes.md` in this skill's folder so the run knows what
 ### Phase 1: Enumerate transcripts
 Session transcripts are JSONL files under `~/.claude/projects/<encoded-project-dir>/`. List the ones in the window:
 ```bash
-find ~/.claude/projects -maxdepth 2 -name "*.jsonl" -mtime -<days> -type f -printf '%TY-%Tm-%Td %10s %p\n' | sort -r
+find ~/.claude/projects -maxdepth 2 -name "*.jsonl" -mtime -<days> -type f -exec stat -f '%Sm %z %N' -t '%Y-%m-%d' {} + | sort -r
 ```
-Scan **top-level** session files. Files under a `/subagents/` subfolder are internal agent transcripts and low signal; skip them unless a main thread points at one. **Skip the current active session's own transcript** to avoid self-reference. Group the files by their project directory and gauge total volume.
+That `stat` form is BSD, which is what macOS ships. On Linux, use `-printf '%TY-%Tm-%Td %10s %p\n'` in place of the `-exec`; GNU `find` accepts it and BSD `find` does not.
+
+Scan **top-level** session files. A session's subagent transcripts and tool results sit in a per-session subfolder beside it (`<session-id>/subagents/` and `<session-id>/tool-results/`), which the `-maxdepth 2` above already excludes. They are internal and low signal; leave them out unless a main thread points at one. **Skip the current active session's own transcript** to avoid self-reference. Group the files by their project directory and gauge total volume.
 
 ### Phase 2: Extract and scan
 If the volume is small (a few small files), read and scan directly. If it is large (several files, or more than a few MB), **fan out one read-only subagent per project cluster**: merge directories that hold only tiny stubs, and split any single directory whose files exceed about 15 MB across two agents. Give each agent the friction schema below and this extraction recipe:
@@ -76,6 +78,21 @@ Present a ranked report. For each finding: title, type, frequency (which session
 - **tool-permission-friction**: the same command or tool repeatedly denied or re-prompted.
 
 Give special weight to **regressions**: an established rule or workflow that quietly stopped being followed. That is where a model upgrade does its damage, and it is the case that most often maps to enforcement rather than to a new rule.
+
+## Consistency sweep (every run, alongside the transcript scan)
+
+Transcripts show what went wrong in a session. This sweep shows what will go wrong later: **a standard stated in more than one place drifts the first time it changes.**
+
+For each family of skills that shares a standard, check four things:
+
+1. **Duplicated rules.** Is a rule stated in more than one SKILL.md or reference file, rather than stated once and pointed at? Grep a distinctive phrase from each shared standard and count the files it lands in. More than one is a finding.
+2. **Stale attributions.** A rule carrying a dated attribution older than a later decision on the same subject. The date is what makes this checkable; a rule with no date cannot be checked this way, and that is itself worth reporting.
+3. **Orphaned reference files.** A file under a skill's `references/` that no SKILL.md points at. Nothing reads it, so nobody notices it has gone stale, and a later session can read a retired rule as current.
+4. **Broken pointers.** A SKILL.md naming a reference file, script, or sibling skill that does not exist.
+
+Report these in the same ranked list as the transcript findings, under `update-skill:<name>`. **The fix for a duplicated rule is to collapse it to one file and point at it, never to synchronize the copies.**
+
+**Run the audit after a session that edited several skills.** That is when a standard gets restated somewhere new, and it is the cheapest moment to catch it.
 
 ## Action classes
 Map each surviving finding to exactly one:

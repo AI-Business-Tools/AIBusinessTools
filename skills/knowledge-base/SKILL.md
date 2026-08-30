@@ -1,7 +1,7 @@
 ---
 name: knowledge-base
-description: Personal knowledge base manager. Processes inbox files (PDF, MD, DOCX, RTF, TXT, HTML, PNG, URL), extracts metadata, renames with citation conventions, generates summaries, maintains a searchable index, answers questions grounded in indexed sources, performs full-text keyword search, moves pipeline output into topic folders, and builds slide decks from indexed or external content via a slides skill.
-triggers: kb, process inbox, kb ask, kb move, kb search, kb find, kb slides, slides from kb, build slides from, knowledge base
+description: Personal knowledge base manager. Processes inbox files (PDF, MD, DOCX, RTF, TXT, HTML, PNG, URL), extracts metadata, renames with citation conventions, generates summaries, maintains a generated searchable index, answers questions grounded in indexed sources, performs full-text keyword search, reports corpus health, moves pipeline output into topic folders, and builds slide decks from indexed or external content via a slides skill.
+triggers: kb, process inbox, kb ask, kb move, kb search, kb find, kb status, kb health, kb slides, slides from kb, build slides from, knowledge base
 allowed-tools: Bash(python*), Bash(pip*), Bash(ls*), Bash(mv*), Bash(cp*), Bash(mkdir*), Bash(find*), Bash(wc*), Bash(file*), Bash(export*), Read, Write, Edit, Glob, Grep, WebFetch, WebSearch, Agent, Skill
 model: opus
 effort: high
@@ -17,15 +17,15 @@ Set your knowledge base root path in your environment or adapt the paths below. 
 ~/knowledge-base/
 ```
 
-All paths in this skill are relative to this root unless otherwise specified. Adjust to match your actual knowledge base location.
+Written as `<knowledge-base-root>` where a placeholder reads more clearly. All paths in this skill are relative to this root unless otherwise specified. Adjust to match your actual knowledge base location.
 
 ## Directory Structure
 
 The knowledge base supports two document storage patterns:
 
-### Pattern A: Per-document subfolder (content skill output)
+### Pattern A: Per-document subfolder (default for all filing)
 
-When a slides or summary skill processes a document, it creates a per-document subfolder containing the source, text extraction, summary, slides, and build artifacts. This is the structure produced by pipeline skills.
+Every filed document gets its own subfolder containing the source, text extraction, summary, and any slides or build artifacts. This is the default for inbox processing (Mode 1), `kb move` (Mode 3), and the content-skill pipelines that write into the knowledge base.
 
 ```
 knowledge-base/
@@ -39,9 +39,9 @@ knowledge-base/
 │   └── 2026-02 Chaining Tasks.../
 ```
 
-### Pattern B: Flat files (simple drops, inbox output)
+### Pattern B: Flat files (legacy, still readable)
 
-For documents that do not need slides or heavy processing, the source, text, and summary sit side by side in the topic folder. Pattern B is the default for knowledge-base-only processing. When a downstream slides skill later generates slides for a Pattern B item, that skill promotes the item to Pattern A by creating a per-document subfolder and moving the existing files into it. The promotion is performed by the slides skill, not by this skill.
+Older items have the source, text, and summary sitting side by side in the topic folder. **Pattern B is no longer produced by new filing, but every reader (the search index, `aa-recents/`, and Q&A) still handles it,** so legacy flat items stay fully functional. When a slides skill generates slides for a flat item, that skill promotes it to Pattern A by creating a per-document subfolder and moving the existing files into it.
 
 ```
 knowledge-base/
@@ -59,15 +59,21 @@ knowledge-base/
 knowledge-base/
 ├── aa-inbox/                     <- Drop files here for processing
 ├── aa-blog/                      <- Drop your own blog posts here for processing
+├── aa-slides-inbox/              <- Optional drop folder for unattended slide builds
 ├── AI-articles/                  <- Topic folders (create as needed)
 ├── AI-teaching/                  <-   names are examples, not a fixed list
 ├── other-articles/               <-   the knowledge-base-update skill discovers all folders
-├── index.md                      <- Auto-maintained document index
+├── index.md                      <- Generated document index, never hand-edited
 ├── topics.md                     <- Auto-maintained topic descriptions
 └── kb.md                         <- How the system works (human-readable reference)
 ```
 
-**Topic folders are dynamic.** The skill does not maintain a hardcoded list. Any immediate subdirectory of `knowledge-base/` (other than `aa-inbox/`, `aa-blog/`, `aa-recents/`, an optional full-text search folder such as `aa-search/`, an optional documentation folder that describes the system itself, and `*_build/`) is treated as a topic folder. Adding a new folder requires no skill or config changes; running the [knowledge-base-update](../knowledge-base-update/) skill will discover it automatically.
+**Topic folders are dynamic.** The skill does not maintain a hardcoded list. Any immediate subdirectory of `knowledge-base/` (other than `aa-inbox/`, `aa-blog/`, `aa-recents/`, `aa-slides-inbox/`, an optional full-text search folder such as `aa-search/`, an optional documentation folder that describes the system itself, and `*_build/`) is treated as a topic folder. Adding a new folder requires no skill or config changes; running the [knowledge-base-update](../knowledge-base-update/) skill will discover it automatically.
+
+**Reference material (`materials/` subfolders):** Any subfolder named `materials/` at any depth inside the knowledge base holds reference items that are not indexable content (third-party documentation, working notes, external project artifacts). Mode-specific behavior:
+- **Inbox processing (Mode 1) and Move Project (Mode 3):** never file items into `materials/`. Treat it as not a valid destination. Items that belong there are placed by hand, not by the pipeline.
+- **Q&A (Mode 2):** include `.md` files from `materials/` when scanning for relevant sources. Do not read binary files from `materials/` (PDF, images, Office documents). When citing a materials source, note it as reference material rather than an indexed entry.
+- **Index generation and the full-text reindex:** skip `materials/` entirely (no index rows, no health warnings).
 
 **Conventions:**
 - Both patterns are valid; the index treats them identically.
@@ -76,53 +82,101 @@ knowledge-base/
 - Summary or slides skills can run directly in topic folders; they do not need to go through inbox.
 - Topic folders are created by the user; the skill suggests but does not create them without approval.
 
+## Helper commands
+
+This skill delegates its mechanical work to small scripts you supply, so that no step depends on a model remembering to do bookkeeping. Wire each one behind the name used throughout this skill; any implementation meeting the contract works. Each is deterministic and costs no model time.
+
+| Command | Contract |
+|---|---|
+| `kb-index` | Walk the knowledge base and regenerate `index.md` from every `_summary.md`'s frontmatter. Atomic write, guarded by a count floor so a partial walk cannot truncate the index. Prints warnings (missing frontmatter, topic drift, invalid date, duplicate rows). |
+| `kb-search search <query>` | Ranked full-text hits over `_summary.md` and `_text.md` bodies. See Mode 4. |
+| `kb-search reindex [--incremental]` | Rebuild the full-text index from current content. |
+| `kb-dup-check "<stem>" [--url <url>]` | Duplicate check on a prospective filename stem. Prints and exits `OK` (0), `DUP` (1), `NEAR` (2), or `ERROR` (3). |
+| `kb-status` | One-screen corpus health readout. See Mode 6. |
+| `kb-recents` | Rebuild the `aa-recents/` symlink folder. See Mode 1 Step 5. |
+| `kb-fetch-url <url> --out <path>` | Mechanically capture a web page to a file and print its metadata. Exit codes are contract; see Mode 1 Step 1. |
+
+If you have not built these yet, each place that calls one names its fallback: `grep -r` for search, `grep index.md` for a duplicate check, a hand-written table for the index. The fallbacks work; they are slower and less exact.
+
 ## Modes
 
-**Index-first gate (lookups and membership questions).** Any request to find, locate, recall, or check whether something is in the knowledge base (whether phrased as `kb ask`, `kb search`, "is X in my kb?", "what do I have on X?", or an informal question) must begin by consulting the index before reading or scanning topic folders directly. Read or `grep index.md`, and run a full-text search if you maintain one (Mode 4). Direct folder browsing is a fallback only, used after the index returns nothing relevant. Never answer a lookup from a folder scan you ran before checking the index.
+**Index-first gate (lookups and membership questions).** Any request to find, locate, recall, or check whether something is in the knowledge base (whether phrased as `kb ask`, `kb search`, "is X in my kb?", "what do I have on X?", or an informal question) MUST begin by consulting the index before reading or scanning topic folders directly. Run `kb search <terms>`, and `grep index.md`. Direct folder browsing is a fallback only, used after the index returns nothing relevant. Never answer a lookup from a folder scan you ran before checking the index.
 
-### 1. Process Inbox (`/kb` or "process inbox")
+**Read exactly one mode file.** The modes are mutually exclusive on any one run. Read this file plus the row that matches the invocation, and **do not read the other mode files**; they describe work this run is not doing.
 
-Scan `aa-inbox/` and `aa-blog/` for new files. Build a list of items with file types and page counts (for PDFs). Items from `aa-blog/` are processed with blog-specific overrides (see Blog Post Processing below).
+| Invocation | Mode | Read |
+|---|---|---|
+| `kb`, `process inbox` | 1. Process Inbox | `references/inbox.md` |
+| `kb ask <question>` | 2. Q&A | `references/qa.md` |
+| `kb move <dir> <topic>`, "file this in `<topic>`" | 3. Move Project | `references/move.md` |
+| `kb search <query>`, `kb find <query>` | 4. Search | inline below |
+| `kb slides <target>`, `slides from kb`, `build slides from` | 5. Slides | `references/slides.md` |
+| `kb slides <path> headless`, `mode=headless` | 5. Slides, headless | `references/slides.md`, then `references/slides-headless.md` |
+| `kb status`, `kb health` | 6. Status | inline below |
 
-**Processing levels:**
+**Mode 5 is the one mode that may need a second mode file.** Its Step 2 file-first cases invoke Mode 1, and its file-after step invokes Mode 3; `references/slides.md` states at each point whether to open `references/inbox.md` or `references/move.md`, and when not to. No other mode opens a second file.
 
-| Level | What it reads | Outputs | When to use |
-|-------|-------------|---------|-------------|
-| **full** | All pages via split-pdf agents | `_text.md` + `_summary.md` | Default for all items |
-| **triage** | Pages 1-4 only (no splitting) | `_summary.md` only (no `_text.md`) | When prompted: "triage", "first pages only", "triage the big ones" |
-| **lite** | Nothing in the PDF | `_summary.md` from companion `.txt` | Automatic when a companion `.txt` file exists |
+### 1. Process Inbox (`/kb` or "process inbox"): read `references/inbox.md`
 
-**Companion .txt convention:** If a PDF has a matching-name `.txt` file (e.g., `Report.pdf` + `Report.txt`), the system uses lite processing automatically: the `.txt` content provides the citation and description for `_summary.md`, and the PDF is filed unread. The `.txt` can contain a citation, description, URL, or any content to base the summary on. If the `.txt` contains a URL (line starting with `http`), fetch the URL for additional content.
+Mode 1 lives in **`references/inbox.md`**: the processing levels and the companion-`.txt` convention, the agent-per-item architecture and its Flow, the subagent model and effort table, Step 1 (file-type routing, the visual-content check, the source-fetch failure rule), Step 4 (`_text.md` and the summary), Step 5 (filing, the index, `aa-recents/`, the search refresh, the report and rate-usage formats), Correcting a filing, and Blog Post Processing.
 
-**Agent-per-item architecture:** Every inbox item is processed in its own subagent, regardless of file type. This is mandatory for all items, not just PDFs. The subagent architecture serves two purposes: (1) context isolation prevents image and content accumulation that can hit API request size limits, and (2) the agent prompt formulation step forces the parent to read and inline the correct summary skill format before launching the agent, which prevents improvised summaries that do not match the knowledge base's format standards.
+On any inbox invocation, **read `references/inbox.md` now and follow it in full.** Every reference elsewhere in this skill to a Mode 1 step, to the Flow, to Correcting a filing, or to Blog Post Processing resolves into that file, except three blocks held here because more than one mode needs them: Citation metadata and naming (below), The frontmatter block (below), and Index Format. **In Mode 5, read it only where `references/slides.md` Step 2 says to. Skip it entirely in Modes 2, 3, 4, and 6.**
 
-**Before launching any agent, the parent must:**
-1. Read the appropriate summary skill in full: your academic summary skill (for academic content) or your general summary skill (for non-academic content). If the batch contains both types, read both.
-2. Inline the summary format instructions into each agent's prompt. Do not tell the agent to read skill files; include the format template directly.
+### 2. Q&A (`/kb ask [question]` or "kb ask"): read `references/qa.md`
 
-**Flow:**
+Mode 2 lives in **`references/qa.md`**: the mandatory index-first consult, source selection including the `materials/` markdown rule, answer synthesis and its citation and provenance requirements, and the optional save-the-answer step. On a `kb ask` invocation, **read `references/qa.md` now and follow it in full.** It writes the frontmatter block held in this file, not a copy of its own. **Skip it in every other mode.**
 
-1. **Parent:** Scans aa-inbox, lists items, checks for duplicates against `index.md`, detects companion `.txt` files.
-2. **Parent:** Reads the appropriate summary skill(s) for the batch (academic and/or general). For items from `aa-blog/`, the blog summary template (see Blog Post Processing) replaces the academic/general template.
-3. **Parent:** For each item, launches an Agent to handle Steps 1-4 below. The agent prompt must inline the relevant instructions (file type routing, naming convention, summary format template from the summary skill) and specify the processing level. Do not tell the agent to read other skill files; include the instructions directly in the prompt.
-4. **Agent:** Processes the item at the specified level: full (split, read all, `_text.md` + `_summary.md`), triage (read pages 1-4 only, `_summary.md`), or lite (use companion content, `_summary.md`).
-5. **Agent returns:** New filename, one-line content summary, content type (academic/general), any errors.
-6. **Parent:** After all agents complete, reads each `_summary.md` to determine topic assignments, then presents the batch summary (Step 5).
+### 3. Move Project (`kb move <source_dir> <topic>`): read `references/move.md`
 
-For each item, the agent follows Steps 1-4:
+Mode 3 lives in **`references/move.md`**: the `materials/` refusal, Step 1 (inventory and the artifact pattern table), Step 2 (always Pattern A), Step 3 (renaming and the pre-move duplicate check), Step 4 (the move and its verification), and Step 5 (index, recents, and search refresh). On a `kb move` invocation, **read `references/move.md` now and follow it in full.** Mode 5's file-after step invokes its Steps 3 to 5 and says so at that point. **Skip it in Modes 1, 2, 4, and 6.**
 
-#### Step 1: Identify file type and route
+### 4. Search (`kb search <query>`)
 
-| Type | Extensions | Processing |
-|------|-----------|------------|
-| PDF | .pdf | full: split-pdf extraction. triage: read pages 1-4 only. lite: use companion `.txt` |
-| Text-based documents | .md, .txt, .rtf | Read directly; generate `_summary.md` |
-| Word documents | .docx, .doc | Extract text via python-docx or textutil; generate `_summary.md` |
-| HTML files | .html, .htm | Extract via trafilatura; generate `_summary.md` |
-| Images | .png, .jpg, .jpeg | Read image; extract text/data/context; generate `_summary.md` |
-| URL list | .urls | For each URL, fetch and convert, then process the resulting text |
-| URL file (persistent) | `urls.txt` (exact name) | Same as .urls, but **clear the file** after processing instead of moving it. This file stays in aa-inbox/ as a persistent drop target. |
-| LaTeX | .tex | Read directly; generate `_summary.md` |
+Keyword search over the full body of every indexed `_summary.md` and `_text.md`. Use this when the question is "find me everything that touches X" rather than "answer this question." Q&A synthesis is not invoked.
+
+**Triggers:** `kb search <query>`, `kb find <query>`, `search kb for <query>`.
+
+Run:
+
+```bash
+kb-search search <query>
+```
+
+Optional filters: `--since YYYY[-MM[-DD]]` (items dated on or after; a partial stored date matches as its earliest day, undated items drop out), `--type <t>` (stored types: paper, article, web, doc, podcast, video, report, post; `blog` aliases to `post`), `--source <topic>` (topic folder name). A `grep -r` fallback cannot filter; with filters active, say so rather than returning unfiltered rows as though they were filtered.
+
+The reference implementation is a local SQLite FTS5 index built from every `_summary.md` and `_text.md` and queried with BM25 ranking; any equivalent full-text indexer works, and `grep -r` over those same files is the fallback when you maintain no index at all. Each hit prints date, topic, author, title, type, score, summary and body snippets with the matched terms in `[brackets]`, and the absolute path to the source file.
+
+Relay the ranked output to the user verbatim, plus a one-line interpretation if the top hit is unobvious. Do not synthesize an answer from the snippets; that is `kb ask`'s job.
+
+**When the index is empty or stale:** if the search reports no results and the query terms are common, suggest a full `kb-search reindex` to rebuild from current source content. The rebuild completes in well under a minute at a few hundred documents and costs no model time.
+
+**The index is authoritative; the full-text database is not.** `index.md` is the complete, generated inventory of every document. The full-text database is a derived accelerator that covers only a subset of the corpus: it skips `$`-, `_`-, and `.`-prefixed folders, `*_build`, and `materials/`. A document can be fully catalogued in `index.md` yet absent from the full-text index. Treat a `kb search` miss as "not in the full-text index," never as "not in the knowledge base."
+
+**Membership questions ("is X in the kb?") must consult `index.md` directly.** Before concluding any document is absent, `grep index.md` for the title, author surname, or concept terms. A reindex should also ingest `index.md` itself as a backstop row, so a catalogued term normally surfaces there even when no per-document hit exists; the authoritative check, though, is the `index.md` grep, not the full-text result.
+
+### 5. Slides (`kb slides <target> [beamer] [lite] [structure=...] [register=...] [plan=...]`): read `references/slides.md`
+
+Mode 5 lives in **`references/slides.md`**: generator and tier selection, the slide-path model pin, Step 1 (resolve the target), Step 2 (the lite gate and the Case A, B, and C file-first logic with the reuse bar and the grandfather sentinel), Step 3 (existing-slides check), Step 4 (generator handoff and the provenance gate), and Step 5 (post-build sync, the file-after step, and the post-build assertion).
+
+On any slides invocation, **read `references/slides.md` now and follow it in full.** Every reference elsewhere in this skill to Mode 5, to the reuse bar, or to the slide-path model pin resolves into that file. **Skip it in Modes 1, 2, 3, 4, and 6.**
+
+**Headless** (`kb slides <path> headless`, `mode=headless`, or any unattended caller) applies seven overrides to those same Steps 1 to 5; they live in **`references/slides-headless.md`**. Read it after `references/slides.md` when, and only when, the `headless` token is present. **Skip it on every interactive run.**
+
+### 6. Status (`kb status`)
+
+One-screen health readout: index-versus-full-text row drift, full-text freshness and integrity and whether the last build was full or incremental, and inbox backlog counts (`aa-inbox/`, `aa-blog/`, `aa-slides-inbox/`). Read-only; no content reads, no disk walk.
+
+**Triggers:** `kb status`, `kb health`.
+
+Run:
+
+```bash
+kb-status
+```
+
+Relay the output verbatim. If it reports drift, suggest `kb-index` followed by `kb-search reindex --incremental`. The deeper judgment-carrying maintenance pass (health check, topics, warnings triage) stays in the [knowledge-base-update](../knowledge-base-update/) skill. The output should include a "largest topics (indexed)" line and warn when any topic reaches a size threshold you set (300 indexed items is a workable default); a warning means it is time to split the topic, by meaning where a real distinction exists and by year otherwise.
+
+## Citation metadata and naming
 
 #### Step 2: Extract citation metadata
 
@@ -149,315 +203,44 @@ Rename to: `YYYY-MM-DD Last. Title.ext`
 
 If the file is already correctly named, skip renaming.
 
-#### Step 4: Generate text and summary
+## The frontmatter block
 
-For each file, generate two artifacts:
+**Begin every `_summary.md` with the frontmatter block below** (inlined into the agent prompt by the parent), then the summary content per the format template. Fill every field except `topic:` and `tags:`, which stay blank for the parent to set together at filing (`tags:` defaults to a single-element list matching `topic:`; you can add more by hand afterward). Every free-text value (`title`, `authors`, `venue`, `url`, `index_line`) is double-quoted with `\"` and `\\` escaping; the closed-format fields (`kb`, `date`, `type`, `topic`, `ingested`, `level`, `model`, `source_basis`) stay unquoted. `index_line` is one sentence that locates and disambiguates the document, never summarizes it (target 30 words or fewer, per the Summary cell rule in Index Format).
 
-**4a. Full-text extraction (`_text.md`)** (PDF sources only)
+```yaml
+---
+kb: v1
+title: "<full title>"
+authors: "<citation-form author list>"
+date: <YYYY-MM-DD publication date, matching the filename prefix>
+venue: "<publication, platform, or show>"   # omit the line if unknown
+url: "<primary URL or DOI>"                 # omit the line if unknown
+type: <paper|article|web|doc|blog|podcast|video|report>
+topic:
+tags:
+index_line: "<one locate-and-disambiguate sentence>"
+ingested: <today>
+level: <full|triage|lite|fast-extract>
+model: <the reading model's bare alias>     # pre-filled by the parent at agent launch
+source_basis: <partial|excerpts>            # omit the line when the source is the complete published text
+capture_caveat: "<one sentence>"            # omit unless the capture carries recorded doubt
 
-During the split-read process, write the full text content to `<filename>_text.md` alongside the source file. Format:
-
-```markdown
---- Page 1 ---
-
-[Full text content of page 1]
-
-[Figure 1: caption or description of figure]
-
---- Page 2 ---
-
-[Full text content of page 2]
-
-[Table 1: caption or description of table]
+---
 ```
 
-Include page markers (`--- Page N ---`), all body text, and annotations for images, figures, and tables (`[Figure N: caption]`, `[Table N: caption]`). This is a faithful transcription, not analysis. Non-PDF sources (markdown, text, HTML) do not need `_text.md` because the source file is the text.
+**Keep the blank line before the closing `---`.** It is part of the block, not stray whitespace. Without it, any Markdown renderer that does not strip front matter reads the last field line plus the `---` beneath it as a Setext heading and displays that field as an H2 (whichever field happens to land last is the one promoted). The blank line makes the closing delimiter a thematic break instead. Make your frontmatter reader skip blank lines inside the block, and field values, the generated index row, and the full-text database are all unaffected.
 
-For PDFs, use split-pdf to deep-read. For shorter documents (under 5 pages), read directly. Delete the split build folder after writing `_text.md`.
+`source_basis` records what the summary was built from, a separate axis from `level:` (which records reading depth of a source that IS on disk). Its values: `full-text` (the filed source is the complete published text; this is the default, and the line is omitted when it holds), `partial` (an incomplete capture of the real source: paywall preview, abstract only, truncated fetch), and `excerpts` (no source was captured; content reconstructed from web-search excerpts and snippets). Absent means `full-text`. The Source-fetch failure rule (Mode 1, Step 1) is what sets this field when a URL will not fetch, and the slide skills read it before authoring and gate on BOTH degraded values. Each gates in the shape its own discipline allows: a **non-interactive deck generator** refuses terminally on either value, escaped by a standalone `useexcerpts` or `usepartial` token; an **interactive generator** confirms once on either; an **unattended batch entry point** refuses on `excerpts` and flags `partial` into the result line its queue reports, because its gate sits after the read is already paid and the queue cannot retry.
 
-**4b. Structured summary (`_summary.md`)**
+`capture_caveat` records doubt that does NOT rise to a gate: a metered publisher that may have served the whole article or a teaser, or a capture obtained by a fallback method. It is free text, one sentence, written by `kb-fetch-url` and copied verbatim into the summary. It is deliberately a separate axis from `source_basis`, whose two values gate the slide skills: a caveat is read by a human and by `kb ask` when citing, and stops nothing. Absent means no recorded doubt.
 
-Generate a full structured summary following the format template inlined in the agent prompt by the parent (see Flow steps 2-3 above). The format comes from one of:
-- Your academic summary skill for academic papers, research articles, preprints, and working papers
-- Your general summary skill for news articles, blog posts, reports, videos, and podcasts
+`model:` records which model performed the reading (on a fast-extract record, the summary agent's model), as a bare alias; the parent pre-fills it at agent launch (Flow step 2), so the record itself says what produced it. The slide path (Mode 5) reads `level:` and `model:` together as its reuse bar; a record with no `model:` field counts as below the bar there. One sentinel value, `model: grandfathered`, is set only by a one-time bulk backfill on records filed before the `model:` field existed; it marks a pre-existing record (whose true reading model is unknown) as trusted for slide-path reuse. New filing never writes `grandfathered`.
 
-The agent does not read these files itself; the parent reads them before launch and inlines the format. Follow the inlined template exactly.
-
-Save as `<filename>_summary.md` alongside the source file. The summary is the analytical reference artifact; the index entry is derived from it.
-
-#### Step 5: File items and report
-
-**This step runs in the parent conversation** after all item agents have completed.
-
-Read `topics.md` (if it exists) and `index.md` to understand existing categories, then determine the best-fit topic folder for each item. **Do not pause for confirmation.** File each item into its best-fit folder immediately, update the index, recents, and search, and then report what was filed and invite redirection. The user corrects after the fact rather than approving before; see "Correcting a filing" below.
-
-**Folder selection:**
-- If an item clearly fits an existing topic folder, file it there.
-- If no existing folder is a clear fit, file it into your overflow folder (for example, `other-articles/`) and flag it in the report so the user can redirect (including to a new folder). **Never auto-create a topic folder.** A new folder is created only when the user names one in a redirect.
-- If an item was flagged as a likely duplicate during the scan (flow step 1), do **not** auto-file it. Leave it in `aa-inbox/`, report it as a probable duplicate of the existing entry, and wait for direction (file anyway, or discard).
-
-**File each item:** move the source file, its `_text.md`, and its `_summary.md` to the target folder. **Update `index.md` immediately after each item is moved** (not deferred to a later sync). Each new entry gets a one-line summary derived from the `_summary.md`. The index must stay current as items are processed so that subsequent Q&A and topic decisions reflect the latest state.
-
-**Report (after filing).** Present all filed items with the folder each landed in and the reason:
-
-> **Filed 3 items from inbox:**
->
-> | # | Renamed file | Type | Filed to | Why |
-> |---|---|---|---|---|
-> | 1 | `2026-03-15 Autor. The Labor Market Impacts of AI.pdf` | 24pp PDF | **AI-employment/** | labor economics, AI impact on wages |
-> | 2 | `2026-02-28 Mollick. Why Students Need AI Tutors.pdf` | 8pp PDF | **AI-teaching/** | AI in education, pedagogy |
-> | 3 | `2025-12-01 Cowen. Economic Growth in 2026.md` | markdown | **other-articles/** | no clear existing-folder fit; filed to overflow (flagged) |
->
-> Filed as above. To move any, say "move `<item>` to `<folder>`" and I will re-file.
-
-**Always use the full renamed filename** (with date prefix) in the report table. The date prefix is essential for sorting and identification.
-
-**Rate usage report:** After presenting the batch summary table, always include a rate usage report. This is mandatory regardless of whether items were processed by subagents or directly in the parent conversation.
-
-Report each agent's item name, page count, token usage, and wall-clock time:
-
-> **Rate usage:**
->
-> | Agent | Item | Size | Tokens | Time |
-> |-------|------|------|--------|------|
-> | 1 | Core Memory Podcast | md | 42k | 2m |
-> | 2 | Enterprise AI Market | 35pp | 99k | 9m |
-> | 3 | Isik. Three Obstacles RAI | md | 28k | 1m |
-> | | **Total** | | **169k** | **9m wall** |
-
-Token counts come from the agent task notification `total_tokens` field. Wall time is the elapsed time from launch to the last agent completing (parallel agents share wall time). All items go through subagents, so this format applies to every run.
-
-**Update `aa-recents/`** after all moves are complete. This folder contains symlinks to the 10 most recently added items (by date added, not publication date). Numbered `01` through `10`, most recent first. Each symlink points to the item's `_summary.md` (or source `.md` if no separate summary exists).
-
-Rebuild procedure (overwrite all symlinks each time):
-1. `rm -f knowledge-base/aa-recents/*`
-2. For each of the 10 most recent items, create: `ln -sf <absolute_path_to_summary> knowledge-base/aa-recents/NN Author. Short Title_summary.md`
-3. Use short, readable names (no date prefix needed since the number provides recency order).
-
-**Refresh the full-text search index** (if you maintain one; Mode 4) after all moves and the recents rebuild, so the new items become findable. Best-effort; do not block the user-visible report on a reindex failure.
-
-#### Correcting a filing
-
-When the user redirects an item after it was auto-filed ("move `<item>` to `<folder>`", "that belongs in `<folder>`", or equivalent):
-
-1. Move the item's files (source, `_summary.md`, and `_text.md` if present; for a Pattern A item, the whole per-document subfolder) into the named topic folder. If the named folder does not exist, create it (the user naming it is the approval) and add a one-line scope description to `topics.md`.
-2. Edit the **Topic cell of the existing `index.md` row** for that item; do not add a new row.
-3. Rebuild `aa-recents/` and refresh the full-text search index if you maintain one (same procedures as above).
-
-Sources are never deleted, so re-filing is fully reversible.
-
-### Blog Post Processing (aa-blog/)
-
-When processing items from `aa-blog/`, apply these overrides to Steps 1-5:
-
-**Step 2 override (metadata):** Author is always the user. Extract the title and publication date from the content. If the publication date cannot be determined, use the file modification date. Blog posts may arrive in any format (md, html, pdf, docx, txt, etc.); apply the same file type routing as Step 1.
-
-**Step 3 override (rename):** Use the naming convention `YYYY-MM-DD AuthorName (blog). Title.ext`
-
-The `(blog)` tag is mandatory. It distinguishes the user's own writing from external sources in topic folders and makes blog posts greppable across the entire knowledge base (`grep -r "(blog)" knowledge-base/`).
-
-**Step 4 override (summary):** Use this lighter template instead of the full academic/general summary. Blog posts are already condensed writing; a full structured summary would be redundant.
-
-```
-# [Title]
-
-**Author:** [Your name]
-**Published:** YYYY-MM-DD
-**URL:** [URL if known]
-**Type:** blog
-
-## Thesis
-[1-2 sentences: the central argument or claim]
-
-## Key Claims
-- [claim 1]
-- [claim 2]
-- [claim 3-5]
-
-## Sources Cited
-- [source 1, Chicago Author-Date]
-- [source 2]
-
-## Context
-[1-2 sentences: what prompted this post, what it responds to]
-```
-
-Do not use the academic or general summary skill for blog posts. Inline this template into the agent prompt instead.
-
-**Step 5 override (index):** Add `[blog]` after the summary text in the index entry. Blog posts are filed into existing topic folders alongside external sources, using the same topic suggestion process. They are not stored in a separate blog-only folder.
-
-**No `_text.md` for blog posts.** The source file is the text. Only generate `_summary.md`.
-
-### 2. Q&A (`/kb ask [question]` or "kb ask")
-
-Answer questions grounded in the indexed knowledge base.
-
-#### Step 1: Consult the index first (mandatory)
-Per the index-first gate above, start here before any folder scan. Read `index.md` for the full document inventory with topics and one-line summaries. If you maintain a full-text search index (Mode 4), also run `kb search <terms>` to surface body-text hits the one-line summaries miss. Only then proceed to Step 2.
-
-#### Step 2: Identify relevant sources
-Based on the question, select the 5-15 most relevant documents. Read their `_summary.md` files.
-
-#### Step 3: Synthesize answer
-Write a grounded answer that:
-- Cites sources by author and date (Chicago Author-Date)
-- Distinguishes between what sources say and inference or synthesis
-- Distinguishes between the user's published positions (`[blog]` entries) and external sources when both are relevant
-- Notes gaps (aspects of the question not covered by any indexed source)
-- Flags contradictions between sources
-
-#### Step 4: Optionally save the answer
-Offer to save the answer as a `.md` file in the knowledge base:
-> "Save this answer to the knowledge base? It will be indexed for future queries."
-
-If accepted, save as `YYYY-MM-DD Query. [Short description].md` in the most relevant topic folder and update `index.md`.
-
-### 3. Move Project (`kb move <source_dir> <topic>`)
-
-Move all artifacts from a source directory into a knowledge base topic folder. Use this when a content skill (a slides skill, summary skill, etc.) has already processed a document outside the knowledge base, and the output needs to be filed.
-
-**Triggers:** `kb move`, `move to [topic]`, `file this in [topic]`, or any request to move pipeline output into a topic folder.
-
-#### Step 1: Inventory the source directory
-
-List all files in the source directory. Classify each file against the artifact pattern list:
-
-| Pattern | Examples | What it is |
-|---------|----------|------------|
-| Source file | `.pdf`, `.md`, `.docx`, `.html`, `.tex`, `.rtf` | Original document |
-| `*_summary.md` | `paper_summary.md` | Structured summary |
-| `*_text.md` | `paper_text.md` | Full-text extraction |
-| `*_slides.pdf` | `paper_slides.pdf` | Slide output |
-| `*_build/` | `Downloads_build/` | Build artifacts (LaTeX intermediates, splits, notes) |
-| `*-analysis.md` | `paper-analysis.md` | Companion analysis |
-| `*_notes.md` | `paper_notes.md` | Reading notes |
-
-Ignore `.DS_Store` and other OS metadata files.
-
-Present the inventory:
-
-> **Source directory:** `/path/to/source/`
->
-> | # | File | Pattern | Action |
-> |---|------|---------|--------|
-> | 1 | `paper.pdf` | source | rename + move |
-> | 2 | `paper_summary.md` | summary | rename + move |
-> | 3 | `paper_slides.pdf` | slides | rename + move |
-> | 4 | `Downloads_build/` | build | move as subfolder |
->
-> **Target:** `knowledge-base/relationships/`
-> **Storage pattern:** A (subfolder) -- slides and build folder present
->
-> Proceed?
-
-Wait for confirmation before moving.
-
-#### Step 2: Determine storage pattern
-
-- **Pattern A (subfolder):** Use when slides, build folder, or 4 or more artifacts exist. Creates `<topic>/<date> <Author>. <Title>/` containing all files.
-- **Pattern B (flat):** Use when only source and summary (and optionally text) are present. Files go directly in the topic folder.
-
-#### Step 3: Rename artifacts
-
-Apply the knowledge base naming convention (`YYYY-MM-DD Last. Title`) to all artifacts:
-
-- Source file: `YYYY-MM-DD Last. Title.ext`
-- Summary: `YYYY-MM-DD Last. Title_summary.md`
-- Text: `YYYY-MM-DD Last. Title_text.md`
-- Slides: `YYYY-MM-DD Last. Title_slides.pdf`
-- Analysis: `YYYY-MM-DD Last. Title-analysis.md`
-- Notes: `YYYY-MM-DD Last. Title_notes.md`
-- Build folder: `YYYY-MM-DD Last. Title_build/` (or `<topic>_build/` for Pattern B)
-
-If a `_summary.md` exists, extract citation metadata from it. Otherwise, extract from the source file using the same rules as Mode 1 Step 2.
-
-If the source file is already in citation format, preserve its name and derive artifact names from it.
-
-#### Step 4: Move all artifacts
-
-Use `mv` (not `cp`) for every file. After moving:
-
-1. **Verify** all files arrived at the destination (ls the target).
-2. **Check** the source directory is empty (ignoring `.DS_Store`).
-3. **Report** what was moved and what remains.
-
-If the source directory is empty after the move, offer to remove it. If files remain, list them explicitly.
-
-#### Step 5: Update index and recents
-
-- Update `index.md` with a new entry derived from `_summary.md`.
-- Rebuild `aa-recents/` symlinks (same procedure as Mode 1).
-- If you maintain a full-text search index (Mode 4), reindex so the moved item becomes findable. Best-effort; do not block the move report on a reindex failure.
-
-### 4. Search (`kb search <query>`)
-
-Keyword search over the full body of every indexed `_summary.md` and `_text.md`, ranked by relevance. Use this when the request is "find me everything that touches X" rather than "answer this question." Q&A synthesis is not invoked.
-
-**Triggers:** `kb search <query>`, `kb find <query>`, `search kb for <query>`.
-
-This mode assumes a full-text index over the body content of the knowledge base. It is optional: if you have not set one up, fall back to `grep -r` over `_summary.md` and `_text.md` files, or use Q&A (Mode 2) instead. The reference implementation is a SQLite FTS5 database built from every `_summary.md` and `_text.md` and queried with BM25 ranking; any equivalent full-text indexer works. Wire your own indexer behind two commands:
-
-- **search** `<query>`: returns ranked hits, each with date, topic, author, title, type, a snippet with the matched terms highlighted, and the absolute path to the source file.
-- **reindex**: walks every topic folder and rebuilds the index from current `_summary.md` and `_text.md` content. It should run in well under a minute at a few hundred documents.
-
-Run the search, then relay the ranked output to the user verbatim, plus a one-line interpretation if the top hit is not obvious. Do not synthesize an answer from the snippets; that is Q&A's job.
-
-**When the index is empty or stale:** if the search returns nothing and the query terms are common, rebuild the index (reindex) from current source content and retry.
-
-**The index is authoritative; the full-text database is not.** `index.md` is the complete, append-maintained inventory of every document. The full-text database is a derived accelerator that may cover only a subset of the corpus (it typically skips build folders, hidden folders, and `materials/`). A document can be catalogued in `index.md` yet absent from the full-text index. Treat a search miss as "not in the full-text index," never as "not in the knowledge base."
-
-**Membership questions ("is X in the kb?") consult `index.md` directly.** Before concluding a document is absent, `grep index.md` for the title, author surname, or concept terms. The authoritative check is the `index.md` grep, not the full-text result.
-
-### 5. Slides (`kb slides <target>`)
-
-Build a slide deck from a knowledge base item, an inbox item, an external file path, or a URL. The skill resolves `<target>` to a single source file, runs the inbox flow if needed to produce `_summary.md` and `_text.md`, then hands off to your slides skill (which handles Pattern B to Pattern A promotion and reuses existing artifacts). This mode requires a slides skill that accepts a source path; if you do not have one, file the item with Mode 1 and run your slides workflow separately.
-
-**Triggers:** `kb slides <target>`, `slides from kb <target>`, `build slides from <target>`.
-
-`<target>` is one of:
-- A URL (starts `http://` or `https://`)
-- A filesystem path (absolute or relative) that exists
-- A name fragment (everything else)
-
-Any structure or style argument is passed through verbatim to your slides skill (for the slides skills in this repository, that is `structure=` and `register=`, with `audience=` as a deprecated alias).
-
-#### Step 1: Resolve `<target>` to a single source file
-
-Resolve in this order:
-
-1. **URL** -> write a staging file at `aa-inbox/slides-YYYY-MM-DD-HHMMSS.urls` containing just that URL (one line). Continue at Step 2 (treated as an inbox item).
-2. **Existing path** -> use directly. Continue at Step 2.
-3. **Name fragment** ->
-   a. Search the corpus for the fragment (full-text search if you have one, otherwise `grep -r` over `_summary.md` files and `index.md`).
-   b. Independently `ls aa-inbox/` for filenames containing the fragment (case-insensitive substring match).
-   c. Combine results:
-      - **0 hits:** report not found and exit.
-      - **1 hit:** use that path; continue at Step 2.
-      - **2 or more hits:** present a numbered list (path, topic, one-line snippet) and wait for the user to pick.
-
-#### Step 2: Determine the case
-
-- **Case A: source is in `aa-inbox/`:** invoke the Mode 1 (Process Inbox) flow on this single item, with two overrides: (1) the deep-read agent retains the split build folder (do not delete it after writing `_text.md`, because the slides skill may re-extract from it); (2) the Step 5 file-then-report behavior applies as a single row: the item is auto-filed into its best-fit folder with no confirmation pause, exactly as in Mode 1, and the "Correcting a filing" path is available if the user redirects. After the item is auto-filed, fall through to Case B with the new in-topic path.
-- **Case B: source is in a topic folder:** skip processing. Continue to Step 3.
-- **Case C: source is outside the knowledge base and outside the inbox:** skip processing. Continue to Step 3.
-
-#### Step 3: Existing-slides check
-
-Compute the prospective output directory per your slides skill's naming: `<parent>/<content_name>/`, where `<content_name>` is the source filename without extension. Check whether `<output_dir>/<content_name>_slides.pdf` exists. (For an item still at Pattern B, also check `<topic_folder>/<content_name>_slides.pdf`.)
-
-If a slide PDF is found, ask whether to rebuild (timestamp a backup of the existing PDF, then regenerate) or skip. On skip, exit without touching any file. If no slides exist, continue.
-
-#### Step 4: Hand off to your slides skill
-
-Invoke your slides skill, passing the resolved absolute source path and any audience or style argument. The slides skill is expected to reuse `_text.md` and `_summary.md` if present, promote Pattern B to Pattern A, and run its own compile and audit cycle.
-
-#### Step 5: Post-build sync
-
-After the slides skill reports completion, run the index-update hook (see Integration section): read `index.md`, search for the document by filename, append an entry if missing. The slide artifact does not get its own index entry; the source document's entry covers it. If Case A ran, the inbox flow already refreshed recents and the full-text index; if Case B or C ran, the source was already in the corpus, so no additional reindex is needed.
+Save as `<filename>_summary.md` alongside the source file. The summary is the analytical reference artifact; the index row is rendered from this frontmatter by script, so a missing or malformed block means the item gets a degraded, flagged index row rather than a silently wrong one.
 
 ## Index Format
 
-`index.md` is a markdown table, one row per document:
+**`index.md` is generated and never hand-edited.** Run `kb-index` to regenerate it from every `_summary.md`'s frontmatter (atomic write, count-floor guarded). The Summary cell is the `index_line` frontmatter field; to change a row, edit the item's frontmatter and regenerate. It is a markdown table, one row per document:
 
 ```markdown
 | Date | Author | Title | Topic | Summary |
@@ -466,7 +249,11 @@ After the slides skill reports completion, run the index-update hook (see Integr
 | 2026-02-18 | AuthorName (blog) | Did an Autonomous AI Write a Hit Piece | AI-safety | Analysis of an autonomous agent incident and implications for AI governance [blog] |
 ```
 
-The index must stay small enough to fit in a single context window read (approximately 200 entries at current scale). If it grows beyond this, add a `topics.md` summary layer that the Q&A mode reads first to narrow which topic folders to search.
+**Summary cell rule (the authoring rule for `index_line`):** one line, one sentence. It locates and disambiguates the document; it does not summarize it (the `_summary.md` holds the detail, and the search database indexes the full summary and text, so keywords crammed into the row add nothing to recall). Target 30 words or fewer; a single dense sentence carrying distinguishing figures may run longer but must stay one sentence. The hard rule is no second sentence and no paragraph. This rule governs the `index_line` frontmatter field at authoring time; the generator renders it into the row unmodified and untruncated.
+
+**Provenance marker.** When a summary's frontmatter carries `source_basis: excerpts` or `source_basis: partial`, the generator appends `[excerpts]` or `[partial]` to that row's Summary cell, parallel to the `[blog]` marker rendered from `type: blog`. This is a browse-path convenience for a human scanning `index.md` or grepping it; the load-bearing provenance check lives in the slide skills, which read the `source_basis` frontmatter field directly, not the index row.
+
+No mode reads this file whole into context; access is by `grep` (membership checks) or by script (`kb-search`, `kb-dup-check`, `kb-index`, `kb-status`). Topic narrowing reads `topics.md`, which stays small by construction. This is what lets the index grow without breaking any mode.
 
 ## Topics File
 
@@ -490,33 +277,32 @@ Updated by the [knowledge-base-update](../knowledge-base-update/) skill. The use
 ## Integration with Other Skills
 
 ### Skills that feed into knowledge-base
-- **split-pdf**: Used by inbox processing for PDF extraction
+- **split-pdf**: used by inbox processing for PDF extraction
 - A web-to-text conversion skill for URL ingestion (web page to extracted text)
 
 ### Skills that consume knowledge-base data
-- **Your summary skills (academic/general)**: The user can request a full summary of any indexed document; the extract is not a substitute.
+- **Your summary skills (academic and general)**: the user can request a full summary of any indexed document; the extract is not a substitute.
 - **Your blog writing skill**: Q&A mode can find relevant sources for post research.
-- **Your slides skill**: Indexed extracts can feed slide generation without re-reading source PDFs. Mode 5 (`kb slides`) is the direct invocation path: it resolves a name fragment, path, or URL, runs the inbox flow if needed, then hands off to your slides skill.
+- **Your deck generator**: the default slide generator. Mode 5 (`kb slides`) is the direct invocation path, and it runs in one of two directions depending on whether the source is already in the knowledge base. **Already filed:** it resolves the name fragment, path, or URL and hands off to the generator, whose reuse rules consume the filed `_text.md` and `_summary.md` without re-reading the source. **New to the knowledge base, at the default deep tier:** nothing is filed first; the generator reads the source once and writes the text, the summary, and the build's source brief in that single pass, and Step 5 files the finished set afterwards. `references/slides.md` owns that route and states its applicability test and its exclusions; do not restate them here.
+- **[slides-content](../slides-content/) and [beamer](../beamer/)**: the Beamer route. Indexed extracts can feed slide generation without re-reading source PDFs. Mode 5's `beamer` token hands off to `slides-content` the same way.
 - **Your analyze-and-reply skill**: Q&A can identify relevant indexed sources to support or challenge forwarded content.
 - **Your chart skill**: Q&A answers involving data comparisons can generate charts.
-- **Your diagram skill**: System architecture and topic maps can be generated as standalone diagrams.
+- **Your diagram skill**: system architecture and topic maps can be generated as standalone diagrams.
 
 ### Index-update hook for content skills
 
-When any content skill (slides, summary, etc.) completes work inside the `knowledge-base/` directory tree, it should check whether the document it processed is in `index.md`:
+When any content skill (slides, summary, and so on) completes work inside the `knowledge-base/` directory tree:
 
-1. Read `knowledge-base/index.md`.
-2. Search for the document by filename or title.
-3. If not found, read the document's `_summary.md` and append an index entry.
-4. If found, no action needed.
+1. If the document's `_summary.md` lacks the frontmatter block (see The frontmatter block above), add it first, with `topic:` set to the containing folder and `tags:` defaulted to `[<topic>]`.
+2. Run `kb-index`. Relay any warnings it prints.
 
-This is a lightweight check (read index, grep, optionally append one row). It does not require invoking the knowledge-base-update skill. Content skills should perform this check as a final step after writing their deliverables.
+This replaces a read-index, grep, and append hook: the generator walks the disk and renders every row from frontmatter, so a document appears in `index.md` as soon as its summary carries the block. It does not require invoking the knowledge-base-update skill. Content skills should perform this as a final step after writing their deliverables.
 
-**Where to run content skills:** Run them directly in the topic folder where the document lives. Do not route through inbox for documents that are already organized. The skill creates its subfolder and build artifacts in place. The index-update hook ensures the index stays current regardless of where processing happens.
+**Where to run content skills:** run them directly in the topic folder where the document lives. Do not route through inbox for documents that are already organized. The skill creates its subfolder and build artifacts in place. The index-update hook ensures the index stays current regardless of where processing happens.
 
 ## Constraints
 
 - **Never delete original source files.** The skill renames and moves but never deletes.
-- **Never overwrite extracts.** If an extract already exists, skip unless the user explicitly asks to regenerate.
-- **Index is append-only during processing.** Entries are only removed by the [knowledge-base-update](../knowledge-base-update/) skill when source files are confirmed missing.
+- **Never overwrite extracts.** If an extract already exists, skip unless the user explicitly asks to regenerate. One standing authorized regeneration exists: the Mode 5 slide path's below-bar re-read, which replaces `_text.md` and `_summary.md` only after preserving the old artifacts as timestamped copies in the item folder.
+- **The index is generated from disk, never edited by hand.** A document appears in `index.md` while its folder exists and disappears when it is removed; to change a row, edit the item's `_summary.md` frontmatter and rerun `kb-index`.
 - **Topic folders are user-created.** The skill suggests new folders but waits for approval before creating them.

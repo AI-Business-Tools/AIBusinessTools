@@ -82,6 +82,8 @@ Ask the user:
 
 Write the reply in the user's voice. Follow the core drafting principles below.
 
+Save the reply draft as a markdown file in the project folder; the file is the deliverable, never terminal-only.
+
 Additional guidance for this skill:
 - Avoid coaching cliches, motivational language, or moral judgments unless the user explicitly requests that mode.
 - Avoid flattery or validation. Flag loaded assumptions neutrally and offer alternative framing when warranted.
@@ -101,7 +103,7 @@ Additional guidance for this skill:
 
 ## Constraints
 - **Do not guess.** If a factual claim cannot be verified, say so and note the confidence level.
-- **Use web search** to verify time-sensitive or high-stakes factual claims before categorizing them.
+- **Use web search** to verify time-sensitive or high-stakes factual claims before categorizing them. Record the source of each verified claim, so the analysis can be checked. Assign **Unverifiable** only after the search has actually come up empty, never as a default for a claim that was not looked up.
 - **Present the strongest arguments on multiple sides.** Do not default to one political or ideological lens.
 - **Never signal agreement or disagreement with a political position** unless the user explicitly states a view.
 - **If the user provides specific points to emphasize**, integrate them naturally rather than listing them mechanically.

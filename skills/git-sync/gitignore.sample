@@ -21,6 +21,10 @@
 !/changelog/
 !/hooks/
 
+# Scratch and in-progress notes, if you keep a working folder at the root of
+# ~/.claude. Harmless if you do not: git ignores a pattern with nothing to match.
+!/working/
+
 # The two sync scripts from this recipe live at the root of ~/.claude:
 !/claude-*.sh
 

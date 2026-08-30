@@ -17,6 +17,7 @@ Claude Code will create the private repository (or get you through `gh auth logi
 - Git installed (`git --version`).
 - A GitHub account.
 - One of: the GitHub CLI (`gh`), or an SSH key added to your GitHub account. The steps below use `gh` as the primary path and note the SSH alternative where it differs.
+- Optional but recommended: `jq` (`brew install jq`, or `apt install jq`). The scripts use it to keep `settings.json` from producing cosmetic merge conflicts. Without it they skip that handling and everything else still works. See "settings.json: key order and per-device keys."
 
 Throughout, replace `USERNAME` with your GitHub username and `claude-env` with whatever you want to name the repository.
 
@@ -148,6 +149,59 @@ git -C ~/.claude commit --no-edit
 
 Run `claude-push` again to send the resolved version. Your committed work is never lost in a conflict: the scripts commit local edits before they pull, so resolving is always just an edit and a commit, never a recovery. Claude Code can do this for you if you ask it to open the file and remove the markers.
 
+One narrow case is settled for you instead of stopping the sync: a conflict in `settings.json` alone, where the only difference is a setting each machine is meant to hold its own value for. The next section explains that, and what the scripts will not decide on their own.
+
+## settings.json: key order and per-device keys
+
+`settings.json` is the one file in `~/.claude` that both machines rewrite constantly without you editing it, and it is the usual source of a conflict you did not cause. Two things in the scripts handle it.
+
+### The problem
+
+Claude Code rewrites `settings.json` on nearly every session, and it does not preserve the order of the keys. Open the file after a week and the same settings sit in a different order. That means each machine commits a differently ordered copy of what is often identical content. Git compares text, not meaning, so when the two histories merge it sees a file whose lines changed everywhere on both sides, and it reports a whole-file conflict over nothing.
+
+On top of that, some settings are genuinely meant to differ between machines: the theme, the terminal interface preferences, the effort level, notification and prompt toggles. Those are real differences, not noise, but you do not want to hand-reconcile them every time you sync.
+
+### Mechanism 1: one stable key order
+
+Both scripts run `settings.json` through `jq -S`, which sorts the keys alphabetically, before anything is staged for commit. Every commit from either machine then records the file in the same order, so git can compare the two sides key by key. When the machines changed different settings, the merge succeeds silently and both changes survive.
+
+This only rewrites the order. No value is added, removed, or altered. It is skipped entirely when `jq` is not installed, and it is written so it cannot damage the file: it works on a temporary copy in the same folder, requires `jq` to parse the file and produce non-empty output before anything is replaced, keeps the file's permissions, and swaps in the result with a single atomic move. If any step fails, the temporary copy is discarded and your `settings.json` is left exactly as it was.
+
+### Mechanism 2: a narrow automatic conflict resolver
+
+Sorting the keys removes the cosmetic conflicts. It does not remove the real ones, where both machines changed the same setting to different values, which for the per-device settings is the normal state of affairs rather than a mistake.
+
+So both scripts will settle a conflict automatically in one case, and only this case:
+
+- `settings.json` is the **only** conflicted file, **and**
+- every key the other machine changed is in the per-device list.
+
+When both hold, the script keeps this machine's `settings.json`, prints the other machine's changes so you can see what was not adopted, finishes the merge, and prints a command that recovers the discarded version from the merge commit later.
+
+It will **not** decide anything else. Each of these stops the sync and leaves the merge in progress for you:
+
+- Any other file is also conflicted.
+- The other machine changed a key that is not in the per-device list, including any key you have not classified and any key a future Claude Code release adds.
+- The comparison cannot be made at all: `jq` is missing, a merge stage is unreadable, or `jq` errors. The script prints a name in angle brackets, such as `<jq-unavailable>`, and stops.
+- The pull failed for a reason that is not a conflict, such as a network or authentication problem.
+
+The gate is deliberately narrow because the remedy is blunt. Keeping "this machine's `settings.json`" keeps the whole file, not the individual keys, so if the other machine had also changed something shared, that change would go with it. Restricting the automatic path to keys nobody expects to travel between machines is what makes a whole-file decision safe.
+
+### Editing the key list
+
+The list lives at the top of both `claude-push.sh` and `claude-pull.sh`, as a JSON array named `PER_DEVICE_SETTINGS_KEYS`. It ships with the settings that are normally machine-specific: `agentPushNotifEnabled`, `autoMode`, `effortLevel`, `enabledPlugins`, `extraKnownMarketplaces`, `remoteControlAtStartup`, `skipAutoPermissionPrompt`, `skipDangerousModePermissionPrompt`, `skipWorkflowUsageWarning`, `theme`, and `tui`.
+
+Everything else counts as shared and will stop the sync rather than resolve: `permissions`, `hooks`, `env`, `model`, `statusLine`, `apiKeyHelper`, `includeCoAuthoredBy`, and anything else you or a future release put in the file.
+
+Two rules for editing it:
+
+1. Keep the two copies identical. The scripts do not read each other.
+2. Removing a key from the list is the safe direction. It means more conflicts get handed to you, never fewer. Adding a key is the direction to think about, because it tells the script that a change to that key on the other machine can be discarded without asking.
+
+The two most likely to want removing are `enabledPlugins` and `extraKnownMarketplaces`. They are listed as per-device because plugin sets often differ by machine. If instead you want your plugins to be the same everywhere, take them out of the list so a plugin change on the other machine stops the sync for you to look at.
+
+If you do not have `jq` installed, both mechanisms switch themselves off and you get the plain behavior described in the previous section: every conflict, cosmetic or real, comes to you to resolve by hand.
+
 ## Running it from inside Claude Code
 
 You do not need a separate terminal for the routine sync. `claude-push` and `claude-pull` are ordinary commands on your PATH, so Claude Code can run them through its Bash tool in the same session it does other work. Point Claude Code at this directory, let it install the commands, and it can run the pull and push for you from then on.
@@ -177,7 +231,7 @@ Then `claude-push` to send the revert to the other machine, which picks it up on
 
 The bottom of each script has a short, clearly marked block you can delete if you do not want it. It exists because of one Claude Code quirk: Claude Code captures a snapshot of your shell once and replays it on every command it runs, instead of re-reading your shell profile each time. If you add a new command (like `claude-push`) and then ask Claude Code to run it in the same setup session, the cached snapshot may not know about it yet, and the command appears "not found."
 
-The block fixes this in one idempotent step every time you push or pull: it re-creates the PATH symlinks for `claude-push` and `claude-pull` so they resolve as real files regardless of the snapshot. That does not touch your interactive terminal; it only makes the two commands findable. If you never run them through Claude Code, the block is harmless and you can remove it.
+The block fixes this in one idempotent step every time you push or pull: it re-creates the PATH symlinks for `claude-push` and `claude-pull` so they resolve as real files regardless of the snapshot. That does not touch your interactive terminal; it only makes the two commands findable. If you never run them through Claude Code, the block is harmless and you can remove it: delete from the "Optional" line down to the "end of optional block" line. The warning in the next paragraph sits above that block in both scripts, on purpose, so deleting the block leaves the warning in place.
 
 **These scripts used to delete the snapshot as well, and that was removed on 2026-08-21 because it was actively harmful.** It read as routine housekeeping and it was not. Every Claude Code session already running re-reads its own snapshot file on *every* command it runs, so deleting the file strips those sessions of whatever your shell profile defined: functions, aliases, and in particular any safety wrapper you have put around `rm`. On the machine this was found on, that meant deletions inside a Claude Code session stopped going to the Trash and became permanent, silently, with nothing written to the log that was supposed to record them, and one file was lost that way.
 

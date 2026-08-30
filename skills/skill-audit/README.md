@@ -23,8 +23,9 @@ It also remembers across runs. Two small state files record what you have alread
 3. **Extract and scan.** Pull the human-authored turns, ignore tool noise and system messages, and look for corrections, redirects, reprompts, and permission friction. For large volumes, fan out one read-only subagent per project cluster.
 4. **Synthesize.** Pool the findings, dedup, rank by evidence, and drop one-offs.
 5. **Verify.** For each candidate, open the actual skill, CLAUDE.md, protocol, or settings file and classify it as a missing rule, an enforcement gap, or a config fix.
-6. **Filter.** Remove anything already declined or already fixed, noting recurrence instead.
-7. **Report and stop.** Present a ranked report with verbatim evidence quotes, a recommended action class, and a confidence level for each finding, capped to a short list. Then ask which to act on. Nothing is edited.
+6. **Sweep for consistency.** Alongside the transcript scan, check each family of skills that shares a standard for a rule stated in more than one file, a dated attribution older than a later decision on the same subject, a reference file nothing points at, and a pointer to a file that does not exist. Transcripts show what already went wrong; this shows what will go wrong the next time a shared standard changes.
+7. **Filter.** Remove anything already declined or already fixed, noting recurrence instead.
+8. **Report and stop.** Present a ranked report with verbatim evidence quotes, a recommended action class, and a confidence level for each finding, capped to a short list. Then ask which to act on. Nothing is edited.
 
 ## Usage
 
@@ -34,6 +35,7 @@ It also remembers across runs. Two small state files record what you have alread
 - A periodic review of where your skills and rules are causing repeated friction
 - The first run right after a model upgrade, to catch rules that quietly stopped being followed (invoke under the strongest available model for this case)
 - Deciding whether a recurring annoyance is worth a new skill or a tightened existing one
+- Right after a session that edited several skills, which is when a standard gets restated somewhere new and is cheapest to catch
 
 **Not good uses:**
 - Auditing a project's source code or a shared team repo (the skill is scoped to your personal configuration only)
