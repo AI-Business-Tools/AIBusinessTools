@@ -1,7 +1,7 @@
 ---
 name: ai-council-deep
-description: "Deep, interactive variant of ai-council with three user-in-the-loop checkpoints (clarify, surface assumptions, iterate). Same five advisors and anonymous peer review. Use when the answer is expensive if wrong, or when you are still genuinely unsure what you are asking."
-triggers: deep council, interactive council, high-stakes council
+description: "Deep, interactive variant of ai-council with three user-in-the-loop checkpoints (clarify, surface assumptions, iterate). Same five advisors and anonymous peer review. Use when the answer is expensive if wrong, or when you are still genuinely unsure what you are asking. Triggers on deep council, interactive council, and high-stakes council."
+when_to_use: Use when the user asks for a deep, interactive, or high-stakes council, or when the decision under review is expensive to get wrong and its framing is still unsettled, since this variant pauses three times so the user can clarify the question, correct the assumptions, and iterate on the verdict. Use ai-council instead for a fast, fire-and-forget run with no checkpoints.
 ---
 
 <!-- Adapted from the interactive-ai-council variant by Freddy Gottesman (GHP Labs, April 2026), itself a fork of the AI Council skill by John Graff (UT Austin McCombs), based on Andrej Karpathy's LLM Council methodology. -->

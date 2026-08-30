@@ -15,7 +15,11 @@
 !/settings.json
 !/settings.local.json
 !/keybindings.json
+!/.mcp.json
 !/skills/
+!/agents/
+!/commands/
+!/output-styles/
 !/scripts/
 !/protocols/
 !/changelog/
@@ -48,6 +52,15 @@ __pycache__/
 
 # 5) Never commit secrets, wherever they appear:
 .env
-*.key
 *.pem
+*.p12
+id_rsa
+id_ed25519
 .credentials.json
+
+# `*.key` is deliberately NOT in the list above, because it excludes any file
+# that happens to end in .key, including a keyboard map, a translation key file,
+# or a data file, and it excludes it silently. If you keep private keys with that
+# extension, uncomment the next line and then re-include anything legitimate,
+# for example: !skills/my-skill/shortcuts.key
+# *.key

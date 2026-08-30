@@ -55,6 +55,8 @@ Keep each entry short: the pattern name, one example, and where the boundary is.
 
 Extraction is one axis. Self-containment is a different one, and text can pass the first and fail the second.
 
+Self-containment is the second axis in the layer this guide grew out of, and, like the extraction test, it is one formulation rather than the only one. If the drafts you reject fail somewhere else, name that axis instead. What carries over is the shape: a second test, stated separately, rather than a clause folded into the first.
+
 Self-containment asks whether the information a phrase points to is reachable from the artifact itself. Can the reader stand on this sentence, or this slide, without recalling prior numbering, remembering an earlier conversation, or having read another document?
 
 The clearest illustration is a phrase like "Question 1." It is precise, specific, and carries real information, so it passes an extraction test cleanly. It fails self-containment, because the reader cannot resolve it without holding the document's numbering in their head. That is exactly why the two tests have to stay separate. Fold self-containment into the extraction test and "Question 1" passes both.
@@ -65,7 +67,7 @@ Three failure forms are worth naming in your own layer:
 2. **A concept used before it is defined.** A framework, term, or label invoked, then explained a paragraph or a slide later, or never.
 3. **A finding that assumes the reader has read the source.** A result named without being restated, on the assumption the reader has the paper, the earlier email, or the prior slide in front of them.
 
-The fix is always one of three: restate the referent inline, define the term on first use, or reorder so nothing is referenced before it is introduced.
+In the working example, nearly every fix turns out to be one of three: restate the referent inline, define the term on first use, or reorder so nothing is referenced before it is introduced. Where none of the three works, the usual reading is that the referent does not belong in the artifact at all.
 
 Decide explicitly whether this test governs chat as well as deliverables. The bare "Question 1" habit shows up in conversation at least as often as in documents, and a layer that binds only finished files will not catch it.
 
@@ -75,7 +77,7 @@ Decide explicitly whether this test governs chat as well as deliverables. The ba
 
 A voice layer gets applied twice, and the two applications are not the same work.
 
-**Generation time is the primary defense.** The rules apply while the draft is being written, phrase by phrase, before anything is finished. This is where the general test does most of its work: pause on the slide title, the section header, or the leading bolded phrase, ask the question, and rewrite before continuing. Say this explicitly in the layer. An AI given a set of rules will otherwise treat them as an editing checklist and draft in its default voice first, which produces a draft that has to be substantially rewritten rather than one that was correct as written.
+**Generation time is the primary defense.** The rules apply while the draft is being written, phrase by phrase, before anything is finished. This is where the general test does most of its work: pause on the slide title, the section header, or the leading bolded phrase, ask the question, and rewrite before continuing. Those short spots are what this guide calls **surfaces**: the fragments written almost automatically and reviewed least, including titles, section headers, column labels, callouts, the leading phrase of a bullet, and annotations on a chart. A default voice survives longest there, because a fragment that short does not feel like writing and does not get read as writing. Say this explicitly in the layer. An AI given a set of rules will otherwise treat them as an editing checklist and draft in its default voice first, which produces a draft that has to be substantially rewritten rather than one that was correct as written.
 
 **Audit time is the backstop.** A separate pass over the finished text, checking it against the layer. The useful property here is independence: the audit is worth much more when it is run by something that did not write the text. A model reviewing its own draft tends to ratify it, because the same judgment that produced the phrase is being asked whether the phrase is good. Running the audit in a separate context, with the layer and the finished text but not the drafting conversation, catches things the writer will not.
 
@@ -95,8 +97,8 @@ A short paragraph that characterizes the overall register: the relationship betw
 **2. The general test**
 The single question applied to every phrase, with worked examples, a boundary case, and a short statement of why a list alone is not sufficient. Placing this before the enumerated rules is deliberate: it tells the AI that the rules below are instances of one idea rather than a set of independent constraints.
 
-**3. Self-containment**
-The second axis, with its failure forms and its fixes, stated as a separate test rather than a subheading under the first.
+**3. A second test**
+Self-containment in the working example, or whichever second axis your own writing calls for, with its failure forms and its fixes, stated as a separate test rather than a subheading under the first.
 
 **4. The named-pattern inventory**
 The enumerated backstop. Patterns common in AI output that fail your voice, each with an example and a boundary. State whether it governs chat as well as deliverables.
@@ -120,18 +122,25 @@ Specific behaviors to prohibit or require. These are the most mechanically enfor
 **7. Formatting conventions**
 Punctuation, capitalization, date and time formats, and other mechanics that appear consistently in your writing. These are the easiest rules to specify precisely and the easiest for an AI to apply reliably.
 
-**8. Notes for the AI executor**
+**8. Citation and reference conventions**
+How a source is named in running text, whether the title or the author leads, and what a second mention looks like. Optional at the start and common in layers that have been in use for a while, because these decisions have to be made consistently and have nowhere better to live. See Notes on Scope below.
+
+**9. Notes for the AI executor**
 A section written directly to the AI that translates the principles into an operational checklist. The principles section explains your values; this section explains how to act on them. Include the generation-time instruction here explicitly, naming the surfaces where the general test gets applied before writing.
 
-**9. Format-specific rules, if you choose to carry them**
+**10. Format-specific rules, if you choose to carry them**
 See Notes on Scope below. One working example carries a whole section of slide-specific rules inside the voice layer rather than in the slide skill.
 
 ---
 
 ## How to Build Your Own
 
-**Step 1: Audit your existing writing.**
-Collect 10 to 20 samples of writing you consider representative of your best work. Include a range of formats: short replies, longer explanations, formal proposals, and casual notes. The goal is enough material to see patterns.
+**Step 1: Collect both halves of the corpus.**
+The first half is your own writing: 10 to 20 samples you consider representative of your best work, across a range of formats such as short replies, longer explanations, formal proposals, and casual notes. The goal is enough material to see patterns.
+
+The second half is AI output you have rejected: drafts you deleted, rewrote heavily, or corrected phrase by phrase. Steps 2 and 5 both read from this half, and step 5 has no other source, so a corpus of your own writing alone leaves two of the twelve steps unperformable.
+
+If you have no such archive yet, which is the normal starting position, make one in an hour. Give the AI three or four writing tasks you would actually give it, with no voice layer in place, and mark every phrase you would cut and what you would put in its place. Twenty or thirty marked phrases is enough to build a first version. From then on the archive fills itself: keep the rejected drafts instead of deleting them, and step 12 has material to work with.
 
 **Step 2: Write the general test.**
 Read the samples and ask what your good writing is doing that generic professional writing is not. State it as one question you can ask about any phrase. Draft it, then try it on ten phrases from your samples and ten from AI output you have rejected. If it passes something you would cut, or cuts something you would keep, revise the wording. This step is worth more time than any other in this list.
@@ -139,8 +148,8 @@ Read the samples and ask what your good writing is doing that generic profession
 **Step 3: Anchor the test with worked examples.**
 Take five or six phrases, mostly real ones from drafts you have corrected. For each: the phrase, what a reader extracts from it, pass or fail, and the rewrite. Include one boundary case that looks like a failure but passes.
 
-**Step 4: Write the self-containment test.**
-Separately from step 2. Go back through your samples looking for pointers, cross-references, and terms used before definition. Name the failure forms you actually produce, not a generic list.
+**Step 4: Write a second test, separately from step 2.**
+Self-containment is the one the working example uses, and it is a reasonable default; a reader whose drafts fail on a different axis should name that one instead. Go back through your samples looking for pointers, cross-references, and terms used before definition. Name the failure forms you actually produce, not a generic list. What matters either way is that the second test stands as its own test rather than a clause inside the first.
 
 **Step 5: Identify the patterns the test misses.**
 Now build the list. Go through AI output you have rejected and ask, for each phrase you cut, whether the general test would have caught it on first inspection. The ones that would have slipped through are your inventory. Each gets a name, an example, and a boundary.
@@ -161,7 +170,7 @@ Say explicitly, in the notes to the AI, that the tests apply while drafting rath
 Give the AI a writing task using only the voice layer as context. Compare the output to your audit samples. Where the output diverges, identify which rule is missing or poorly specified, and revise. Run the comparison in a fresh session so the layer is doing the work rather than the conversation.
 
 **Step 11: Set up the audit pass.**
-Decide which outputs get an independent review against the layer, and arrange for that review to run somewhere that did not produce the draft. Write down what the reviewer checks and what it is not responsible for; an audit with unbounded scope produces findings you will not act on.
+Decide which outputs get an independent review against the layer, and arrange for that review to run somewhere that did not produce the draft. Two mechanisms do this in Claude Code. Ask for the review in a subagent, which gets its own context and can be handed the layer and the finished text and nothing else. Or paste the layer and the finished text into a fresh session with none of the drafting conversation. Either way the reviewer sees the rules and the output, never the reasoning that produced the output. Write down what the reviewer checks and what it is not responsible for; an audit with unbounded scope produces findings you will not act on.
 
 **Step 12: Iterate.**
 A voice layer is a living document. Add rules when you find new failure modes. Tighten rules when the AI finds loopholes. Remove rules that generate false positives, where the rule fires on correct writing and breaks it. When you add a specific rule, check first whether the general test already covers it and the real problem is that the test is not being applied.
@@ -173,6 +182,10 @@ A voice layer is a living document. Add rules when you find new failure modes. T
 The voice layer is a foundation, not a standalone tool. It does not know how to structure an email, format a blog post, or organize a proposal. That work belongs to format-specific skills.
 
 The integration pattern is simple: every format-specific writing skill reads the voice layer first, then applies its own structural rules. The voice layer handles how you sound; the format skill handles what goes where.
+
+That order does not happen on its own, and nothing in the files implies it. You cause it by writing it down, in one of two places. Put a line near the top of each format skill saying to read the voice layer in full before drafting, naming it by path. Or put one line in your `CLAUDE.md` saying that any skill producing writing in your voice reads the layer first, which covers skills you have not written yet. The line in `CLAUDE.md` is loaded on every session and costs a little on all of them; the line in each skill costs nothing until that skill runs, and has to be added to each new one.
+
+None of this is a prerequisite. A voice layer with no format skills behind it still works: ask for a draft in your voice, and Claude loads the layer on the strength of its description alone. Format skills are what stop you from repeating structural instructions, not what make the voice layer function.
 
 **Reading order:**
 
@@ -194,7 +207,9 @@ The integration pattern is simple: every format-specific writing skill reads the
 
 ## Example Structure
 
-The following skeleton shows how a voice layer SKILL.md can be organized. Replace bracketed placeholder text with your own content. The ordering is the point: the general test sits above the enumerated rules, and self-containment sits beside it as its own section.
+The following skeleton shows how a voice layer SKILL.md can be organized. The ordering is the point: the general test sits above the enumerated rules, and the second test sits beside it as its own section.
+
+**How to read the brackets.** Every bracketed passage is a note to you, whether it describes the content that belongs in that spot, gives a count, tells you to keep going, or flags an example as an example. Replace the whole passage, brackets included, with your own text. Nothing bracketed is meant to be shipped as written, and the headings are examples too: rename any of them where a different word fits your writing better. The one deliberate exception is the `description` field in the frontmatter, which works close to as written once its slots are filled, because that field is what makes Claude load the skill at all. The `when_to_use` field under it is bracketed like everything else, and what its brackets describe is prose, so write sentences there rather than a list of trigger phrases.
 
 ```markdown
 ---
@@ -202,7 +217,10 @@ name: [your-handle]-writing-voice
 description: [Your name]'s writing voice and editorial principles. Foundation layer
   for all writing in [your] voice. Read this skill before any format-specific writing
   skill.
-triggers: write in [my] voice, apply [my] voice, [my] writing style
+when_to_use: Use when [one to three sentences of prose, not a list of phrases, naming
+  the requests that should load this layer, such as writing in your voice, applying
+  your style, and any format skill that writes in your name. Name what it is not for
+  too.]
 ---
 
 # [Your Name] Writing Voice
@@ -243,7 +261,7 @@ pattern completions, so there is always a next phrase nobody has cataloged.]
 
 ---
 
-## Self-Containment
+## [Your Second Test, e.g., Self-Containment]
 
 [State it as a separate axis and say so explicitly, with the one example that
 passes the general test and fails this one.]
@@ -292,6 +310,8 @@ from re-acquiring rules you have already decided against.]
 
 ## Tone Rules
 
+[Categories below are placeholders, not prescriptions.]
+
 ### [Category 1: e.g., Openers]
 
 ### [Category 2: e.g., Warmth]
@@ -335,7 +355,7 @@ When writing as [your name]:
    chart annotations. State that this is the generation-time application and that
    audits are the backstop, not the primary defense.]
 
-5. **Apply the self-containment test before writing any reference.** [Same shape:
+5. **Apply [your second test] before writing any reference.** [Same shape:
    generation-time application, audit as backstop.]
 
 ---
@@ -345,6 +365,19 @@ When writing as [your name]:
 [Optional. See Notes on Scope. Rules that apply to one output format, kept here so
 they travel with the voice rather than living in the format skill.]
 ```
+
+---
+
+## Installation
+
+The finished file is a skill like any other, and it installs the same way.
+
+1. Save it as `~/.claude/skills/<your-handle>-writing-voice/SKILL.md`, where the folder name matches the `name` field in the frontmatter. One skill per folder, and the file inside is always called `SKILL.md`.
+2. Check the `description` field, because that field is what makes Claude load the skill. Claude reads the name and description of every installed skill at the start of a session and loads the body only when a request matches one. A description that says what the file is for and when to read it ("writing voice and editorial principles; read before any format-specific writing skill") gets loaded when you ask for an email. A description that only says "writing voice" often does not. The `description` is what Claude reads to decide whether to load a skill at all; `when_to_use` refines that choice, in prose, by saying which requests belong to this skill and which belong to a neighboring one.
+3. Restart Claude Code, or run `/skills` to reload.
+4. Confirm it loaded. Run `/skills` and look for the skill in the list, which confirms the file is installed and parsed. That is not the same as confirming it fires, so also open a fresh session, ask for a short piece of writing in your voice, and check the output for one rule that exists only in your layer, such as a punctuation convention or a banned opener. If the rule was followed, the layer is being read. If it was not, the description is the first thing to fix.
+
+If you version your Claude Code configuration with [git-sync](../git-sync/), commit this file along with the rest; it is authored text, and it will change more often than anything else you keep there.
 
 ---
 
@@ -360,7 +393,7 @@ Putting it in the voice layer keeps the rule attached to the reasoning that prod
 
 The layer this guide grew out of went the second way, deliberately, and now carries a full section of slide rules inside the voice layer. If your formats are produced by a single skill each, the first way is cheaper. If several skills produce the same format, or if the format-specific rules are really applications of your general test rather than mechanics, the second way holds up better.
 
-**Expect the layer to grow, and know what growth costs.** A voice layer starts small and does not stay small. The working example behind this guide is roughly 33KB after regular use, and most of that growth came from three places: named patterns added each time an unnamed phrase got through, boundary carve-outs added each time a rule fired on writing that was fine, and worked examples added because an abstract rule was being applied inconsistently. All three are legitimate, and all three are load-bearing.
+**Expect the layer to grow, and know what growth costs.** A first version is a page or two, somewhere around 500 to 800 words: the core voice paragraph, the general test with its worked examples, the second test, and whatever named patterns your rejected drafts have already given you. That is enough to change the output, and it is the right size to start at. A layer does not stay that size. The working example behind this guide runs to roughly 5,000 words, a dozen printed pages, after a long stretch of daily use. That figure describes where a layer ends up, not a target to write toward, and a first version written at that length would mostly be guesses. Most of the growth came from three places: named patterns added each time an unnamed phrase got through, boundary carve-outs added each time a rule fired on writing that was fine, and worked examples added because an abstract rule was being applied inconsistently. All three are legitimate, and all three are load-bearing.
 
 The cost is real, though. A file that is read at the start of every writing task is paid for on every writing task, and a long file dilutes attention across its own rules. Two habits keep it in bounds. Before adding a specific rule, check whether the general test already covers the case and the actual problem is that the test was not applied. When you add a boundary carve-out, put it with the rule it qualifies rather than in a separate exceptions section, so the rule and its limits are read together.
 

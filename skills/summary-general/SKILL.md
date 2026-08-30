@@ -1,7 +1,7 @@
 ---
 name: summary-general
-description: Summarizer for news articles, blog posts, videos, and podcasts. Structured summaries with citations, thesis, themes, and critical analysis. Not for academic papers; use summary-academic.
-triggers: summarize this, summarize this article, general summary, /general-summary, quick summary, brief summary, /general-summary quick
+description: Summarizer for news articles, blog posts, videos, and podcasts. Structured summaries with citations, thesis, themes, and critical analysis. Not for academic papers; use summary-academic. Triggers on "summarize this", "summarize this article", "general summary", "/general-summary", "quick summary", "brief summary", and "/general-summary quick".
+when_to_use: Use when the user wants a news article, a blog post, a video, a podcast, or a similar general-audience source summarized with its thesis, main themes, citations, and a critical read. Use summary-academic instead when the source is a scholarly paper, a preprint, or a dissertation, which needs the methodology and implications treatment this skill does not apply. A request for a quick or brief summary selects the short form of this same skill rather than a different one.
 ---
 
 # General Content Summary

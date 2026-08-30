@@ -22,9 +22,10 @@ This recipe keeps `.git` local on each machine and pushes to a private GitHub re
 
 ## What you get
 
-- History, diffs, and surgical revert on your skills, `CLAUDE.md`, scripts, hooks, and memory.
+- History, diffs, and surgical revert on your skills, subagents, slash commands, `CLAUDE.md`, scripts, hooks, and memory.
 - Two-machine sync in two commands: pull when you sit down, push when you finish.
 - An allowlist `.gitignore` that tracks only authored text and ignores caches, transcripts, and runtime folders by default, so nothing sensitive or noisy is committed by accident.
+- Scripts that stop rather than guess. Every merge conflict is handed to you, they refuse to commit while a merge is unfinished or while a file still holds conflict markers, and they check the lines about to be committed for anything shaped like a live API key.
 
 Two boundaries worth stating up front:
 
@@ -69,10 +70,14 @@ On a single machine, `claude-push` on its own is a good commit-and-back-up-to-Gi
 
 **Why an allowlist `.gitignore`.** The default is to ignore everything, then re-include only the authored paths. Any new runtime folder, cache, or transcript directory Claude Code creates later is ignored automatically and cannot be committed by accident. You opt files in; you never have to remember to opt new noise out.
 
-**Why merge, not rebase.** If you edit on two machines, their histories diverge. A merge keeps both lines of work and records the join. The scripts use `--no-rebase`, so an out-of-order push or a forgotten pull merges automatically when the edits do not overlap. If the same lines were changed on both machines, the sync stops and asks you to resolve the conflict, rather than rewriting history or guessing. There is one narrow exception, described in `setup.md`: when `settings.json` is the only conflicted file and the other machine changed nothing but a per-device toggle, the scripts keep this machine's copy and carry on. Anything else, including any key not on that list, still stops.
+**Why merge, not rebase.** If you edit on two machines, their histories diverge. A merge keeps both lines of work and records the join. The scripts use `--no-rebase`, so an out-of-order push or a forgotten pull merges automatically when the edits do not overlap. If the same lines were changed on both machines, the sync stops and asks you to resolve the conflict, rather than rewriting history or guessing.
+
+**Why nothing is resolved automatically.** Every conflict stops, in every file, `settings.json` included. An automatic resolution keeps or discards a whole file, so it can only ever be as good as its guess about which whole file you meant, and the cost of a wrong guess is the other machine's work. What the scripts do instead is remove the cause of most conflicts: they sort the keys in `settings.json` and `settings.local.json` before committing, so the two machines stop producing whole-file conflicts over key order alone. `setup.md` has the detail.
 
 **Why this is not a backup.** Git gives you history and revert on authored text. It does not capture the binaries, caches, or content files the `.gitignore` excludes, and a single private repo is one copy. Keep a separate full backup of your environment for recovery.
 
 ## Installation
 
-See `setup.md`. The short version: create a private GitHub repo, run `git init` in `~/.claude`, add the `.gitignore`, scan for secrets, make the first commit and push, then drop `claude-push.sh` and `claude-pull.sh` into `~/.claude` and symlink them onto your PATH.
+See `setup.md`. The short version: set your Git identity if this machine has never used Git (`git config --global user.name` and `user.email`, the usual first-time stumble), create a private GitHub repo, run `git init` in `~/.claude`, add the `.gitignore`, scan for secrets, make the first commit and push, then drop `claude-push.sh` and `claude-pull.sh` into `~/.claude` and symlink them onto your PATH.
+
+Adding a second machine has its own step, and its own warning: an earlier version of that step could delete the first machine's files. `setup.md` Step 6 has the safe sequence and how to recover if you followed the old one.

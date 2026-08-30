@@ -16,11 +16,11 @@ The handoff protocol solves this by capturing exactly what the next session need
 
 ## How It Works
 
-At the end of a session you say "handoff" (or one of the trigger phrases). Claude Code writes two entries to `CLAUDE.local.md` in the working directory: a terse session log entry that stays forever, and a handoff entry that captures the current state and is replaced the next time you write one. Sessions that changed durable configuration also get a dated changelog file holding the file-level detail and the reasoning.
+At the end of a session you say "handoff" (or one of the trigger phrases). Claude Code writes two entries to `CLAUDE.local.md` in the working directory: a terse session log entry that stays forever, and a handoff entry that captures the current state and is replaced the next time you write one. Both are written every time you trigger a handoff, however light the session was. The only part that depends on what the session did is the changelog file: sessions that changed durable configuration also get a dated one holding the file-level detail and the reasoning.
 
-At the start of the next session you say "resume." Claude Code reads `CLAUDE.local.md`, reads the project's root `README.md` and its status record, follows the context sources the handoff lists, reads the pre-digested summaries, and reports a brief status before waiting for instructions.
+At the start of the next session you say "resume." Claude Code reads `CLAUDE.local.md`, follows the context sources the handoff lists, reads the project's root `README.md` and its status record (the file where the project keeps its open items, if it keeps one), reads the pre-digested summaries, and reports a brief status before waiting for instructions.
 
-The protocol is file-based. `CLAUDE.local.md` travels with the project, and every session in that directory shares the same history.
+The protocol is file-based. `CLAUDE.local.md` travels with the project, and every session in that directory shares the same history. It holds one person's working state, so in a shared repository add it to `.gitignore` and commit it only where everyone on the project wants the same session history.
 
 ---
 
@@ -30,7 +30,7 @@ The handoff entry has seven required fields, plus two optional ones. Every field
 
 **Session summary** captures what was accomplished in 1-2 sentences. This is what you scan when you have forgotten what you were working on.
 
-**Open issues** captures what is actually blocked or undecided. "None blocking" is the expected outcome of a clean session and a stronger report than a list. Where the project keeps a status record, this field names it by path rather than copying its rows, because two copies of the open set means one of them is wrong.
+**Open issues** captures what is actually blocked or undecided. "None blocking" is the expected outcome of a clean session and a stronger report than a list. Where the project keeps a status record, meaning whichever single file holds its open items, this field names it by path rather than copying its rows, because two copies of the open set means one of them is wrong. Many projects keep no status record, and there this field is the open set: items stay in it and are carried forward at every rotation.
 
 **Next steps** lists what the next session does, with the consequence of not doing it. Anything needing a decision from you is raised in the session itself rather than parked here, where it would disappear at the next rotation.
 
@@ -52,9 +52,9 @@ The handoff entry has seven required fields, plus two optional ones. Every field
 
 ## The Session Log Entry
 
-The session log entry is the permanent half of the dual write and is deliberately tiny: a dated heading, the skill used, a summary capped at a recommended 30 words, a status, and an optional pointer to the changelog. It records that something happened and where to look; it does not record what happened in detail.
+The session log entry is the permanent half of the dual write and is deliberately tiny: a dated heading, the skill used, a summary held to the 30-word cap, a status, and an optional pointer to the changelog. It records that something happened and where to look; it does not record what happened in detail.
 
-The cap is the point. A summary allowed to grow becomes a small changelog inside a file that auto-loads on every session, and the cost is paid by every session in the project forever.
+The cap is the point. A summary allowed to grow becomes a small changelog, and the entry stops doing the job it exists for, which is to say that something happened and where the detail lives.
 
 ---
 
@@ -62,21 +62,19 @@ The cap is the point. A summary allowed to grow becomes a small changelog inside
 
 `CLAUDE.local.md` keeps exactly one handoff entry: the most recent. On each write the new entry is appended first and the retired one deleted after, so the file is never momentarily without a handoff.
 
+Session log entries, by contrast, are never deleted. When enough of them have accumulated to be in the way, the oldest move verbatim into a project archive file with one pointer line left in their place, which is relocation rather than deletion.
+
 Single-entry retention only works because carry-forward is mandatory. Before the prior handoff is deleted, every still-open item in its **Open issues** and **Context for next session** is copied into the new one. The new handoff must stand alone. Without that rule, rotation silently drops open work, and the drop is invisible because the evidence is deleted in the same step.
 
 **Next steps is the one field excluded from carry-forward, on purpose.** Its items are re-earned rather than inherited: an action survives only where the session writing the handoff decides to write it again. An inherited list of next steps grows without limit and stops being read, because nothing in it was chosen by the session presenting it.
 
 ---
 
-## The Size Budget
+## Where Durable Rules Go
 
-`CLAUDE.local.md` auto-loads in full at the start of every session in its folder. Its length is therefore a standing tax on every session in that project, paid whether or not the session ever looks at the file. The entry formats cap the parts; the size budget caps the whole.
+Everything in `CLAUDE.local.md` moves: the handoff entry is replaced on the next write, and a session log entry is history the moment it is written. So a rule that should shape future work cannot live there, and it cannot live in a changelog file either, because changelog files are read only when someone goes looking for the history of one session. A rule parked in either place is lost silently: the next session simply never learns it exists, and nothing in the files says anything is missing.
 
-The recommended defaults are 20,000 characters for the file and 6,000 for the handoff entry, both enforced, plus an advisory 2,000 for the session log entry just written and the 30-word summary cap. The two enforced numbers are the two the current session can actually fix. An entry written months ago cannot be repaired by today's writer, so measuring it would print a flag forever, and a check that always fires is a check nobody reads.
-
-When the file goes over, the remedy is archival, not deletion: the oldest session log entries move verbatim into a project archive file, leaving a single pointer line behind. When the handoff entry goes over, narrative and evidence move to the changelog, and open items move to the project's status record. Open issues, next steps, and context sources are never trimmed to hit a number.
-
-**Where the overflow goes matters more than that it went.** Narrative belongs in the changelog. A durable rule never does, because changelog files are not read at session start; a rule trimmed there to save bytes is silently lost. Durable rules go to the project's `CLAUDE.md`, its standards file, its root `README.md`, or the skill that enforces them.
+Durable rules go to a file that is actually read at the moment it is needed: the project's `CLAUDE.md`, which loads every session; its standards file, read on demand; its root `README.md`, which the resume reads, where the project has no `CLAUDE.md`; or the skill that enforces the rule.
 
 ---
 
@@ -84,7 +82,7 @@ When the file goes over, the remedy is archival, not deletion: the oldest sessio
 
 A changelog file is written when a session touches skills, scripts, protocols, or other durable configuration, meaning anything that would need an audit trail if it later breaks. Routine content work does not get one.
 
-Naming is `YYYY-MM-DD-topic.md`, and the file holds the three things the rolling state file no longer carries: which files changed and where, why the choices were made, and what was open at the time. It is linked from the **Detail** field of both the session log entry and the handoff, which is the only way it gets found. The protocol deliberately keeps no index of changelog files: an index duplicates every file it links to and goes stale unread, while a directory listing and a recursive search do the job.
+Naming is `YYYY-MM-DD-topic.md`, and the `changelog/` folder has to exist before the file is written, since a **Detail** link is a path and resolves only once the folder and the file are both there. The file holds the three things the rolling state file no longer carries: which files changed and where, why the choices were made, and what was open at the time. It is linked from the **Detail** field of both the session log entry and the handoff, which is the only way it gets found. The protocol deliberately keeps no index of changelog files: an index duplicates every file it links to and goes stale unread, while a directory listing and a recursive search do the job.
 
 ---
 
@@ -95,7 +93,7 @@ When you type "resume," Claude Code runs a five-step sequence before doing anyth
 1. Read `CLAUDE.local.md`. Find the handoff entry and scan the session log entries for a timeline.
 2. Read context sources in the order given, plus the working directory's root `README.md` and the project's status record.
 3. Read pre-digested files not already covered.
-4. Report: session history, files read, project state as of the handoff's date, active skill, the status record's open items, next steps, and todos where present. End with "Ready to continue."
+4. Report: session history, files read, project state as of the handoff's date, active skill, the open items (from the status record, or from the handoff's Open issues field where the project keeps no record), next steps, and todos where present. End with "Ready to continue."
 5. Wait. Do not begin work until you confirm or redirect.
 
 Two details in step 2 and step 4 are worth calling out.
@@ -104,7 +102,7 @@ Two details in step 2 and step 4 are worth calling out.
 
 **The handoff is frozen.** It describes the project as it stood on the date it was written, and that date may be weeks back. The resume reports its state fields as of that date rather than as current fact, and re-checks any specific claim a proposed next step depends on before asserting it. This is targeted, not a sweep of the project.
 
-The **context** trigger runs the same five steps, then scans the working directory for folders named `context`, `content`, `aa context`, or similar, reads every file in each match, and adds a context folders line to the report.
+The **context** trigger runs the same five steps, then scans the working directory for immediate subfolders named `context` or `content`, or whose name contains the word "context", reads every file in each match, and adds a context folders line to the report.
 
 ---
 
@@ -124,11 +122,11 @@ An earlier version of this protocol kept two, current and previous, on the theor
 
 **Why did file lists and rationale move out of the handoff?**
 
-Both grew without bound and both were paid for on every session in the project. A file list is the least compressible content in a handoff and the least useful to a session that is about to read the files anyway. Rationale is valuable, but it is valuable at the moment someone asks why, which is rare, not at the start of every session, which is constant. Moving both to a changelog file keeps them one read away and takes them off the standing bill.
+Both grew without bound, and neither was what the next session needed at the moment it read the handoff. A file list is the least useful thing a handoff can offer a session that is about to open those files anyway. Rationale is valuable, but it is valuable when someone asks why, which is rare, not at the start of every session, which is constant. Moving both into a changelog file keeps them one read away and keeps the handoff a snapshot.
 
 **Why install the protocol as a separate file instead of pasting it into `CLAUDE.md`?**
 
-`CLAUDE.md` is loaded in full at the start of every session. A protocol this long sitting inside it is charged to every session in every project, including the many that never write a handoff. The protocol is needed at exactly two moments, the end of a session and the beginning of the next one, so it belongs in a file read on demand at those moments. The same reasoning drives the size budget on `CLAUDE.local.md`: anything that auto-loads is a standing tax, and the way to keep it honest is to measure it.
+`CLAUDE.md` is loaded in full at the start of every session. A protocol this long sitting inside it is charged to every session in every project, including the many that never write a handoff. The protocol is needed at exactly two moments, the end of a session and the beginning of the next one, so it belongs in a file read on demand at those moments. The same reasoning shapes `CLAUDE.local.md`, which carries terse entries and a pointer to the changelog rather than the detail itself: what loads on every session should hold only what every session needs.
 
 **Why list context sources explicitly rather than reading the whole directory?**
 
@@ -142,26 +140,39 @@ The resume report is a status, not a proposal. Starting work automatically from 
 
 ## Installation
 
-**Save `protocol.md` as a standalone file that Claude Code reads on demand.** A natural home is `protocols/handoff-and-resume.md` inside your Claude Code configuration directory, or a `protocols/` folder in the project itself.
+**Save `protocol.md` as a standalone file that Claude Code reads on demand.** The natural home is `~/.claude/protocols/handoff-and-resume.md`, inside your Claude Code configuration directory (`~/.claude/`), which makes the one copy available in every project.
 
 **Then add one pointer to your `CLAUDE.md`,** something like:
 
 ```markdown
 ## Handoff, Resume, and Context
 
-The full protocol lives in `protocols/handoff-and-resume.md`. Read it before producing
-any handoff entry, session log entry, resume report, or context report, never from memory.
+The full protocol lives in `~/.claude/protocols/handoff-and-resume.md`. Read it before
+producing any handoff entry, session log entry, resume report, or context report, never
+from memory.
 
-- **Handoff:** write a session log entry plus a handoff entry to `CLAUDE.local.md`.
-  Triggers: "handoff", "write a handoff", "ho", "ho todo [tasks]".
-- **Resume:** read the most recent handoff and its context sources, report project state,
-  then wait. Triggers: "resume", "pick up", "catch me up", "re".
-- **Context:** run Resume, then read any context folders in the working directory in full.
-  Triggers: "context", "full context", "load context".
+These three procedures run ONLY when I type one of the trigger phrases below. Resume runs
+at the start of a session, handoff at the end of one. Do not apply this protocol on any
+other turn, and never write or offer a handoff on your own judgment. The short forms "ho"
+and "re" count only when they are my entire message, never as those letters inside a
+sentence.
+
+- **Handoff** (only when I type a trigger): write a session log entry plus a handoff entry
+  to `CLAUDE.local.md`. Both are written every time, whatever the session held. Triggers:
+  "handoff", "write a handoff", "save a handoff", "handoff for next session", "ho",
+  "ho todo [tasks]", "handoff todo [tasks]".
+- **Resume** (only when I type a trigger): read the most recent handoff and its context
+  sources, report project state, then wait. Triggers: "resume", "pick up", "catch me up", "re".
+- **Context** (only when I type a trigger): run Resume, then read any context folders in the
+  working directory in full. Triggers: "context", "full context", "load context".
 ```
+
+If you would rather keep the protocol inside a single project instead of in `~/.claude/`, save it as `protocols/handoff-and-resume.md` in that project and change the path in the pointer to match; the pointer's path is read relative to the file it sits in, so an absolute path and a project-relative one are not interchangeable.
 
 Do not paste the protocol body into `CLAUDE.md`. That file loads in full on every session, and the protocol is only needed when a handoff is written or read.
 
+**Upgrading from an earlier version of this protocol.** Earlier releases told you to copy the protocol body straight into `CLAUDE.md`. If you did that, Claude reads the whole protocol, including its judgment-based guidance, on every single turn, and the common symptom is Claude offering or writing a handoff after ordinary turns instead of once at the end of a session. The fix: delete that block from your `CLAUDE.md`, save `protocol.md` as a separate file, and paste the short pointer above in its place.
+
 The protocol is self-contained and does not depend on any other skill in this repository. It works in any Claude Code project where `CLAUDE.local.md` can be written to the working directory. The triggers are plain text phrases and need no configuration.
 
-If you use skills with their own Session Log sections, you can configure them to ask whether to write a handoff at the end of a multi-round session. See the **Auto-trigger** note in `protocol.md`.
+If you write your own skills, you can configure one to offer a handoff at the end of a long session. See the note for skill authors near the top of `protocol.md`. Without that configuration, Claude never offers one; the trigger phrases are the only way these procedures run.

@@ -64,7 +64,9 @@ If a `_summary.md` exists, extract citation metadata from it. Otherwise, extract
 
 If the source file is already in citation format, preserve its name and derive artifact names from it.
 
-Once the renamed stem is settled, run the scripted duplicate check before moving anything: `kb-dup-check "<renamed stem>" [--url <url from the _summary.md frontmatter>]`. On `DUP` or `NEAR`, report the match and wait for the user's direction (move anyway, or stop); on `ERROR`, say the check could not complete and ask whether to proceed. Never eyeball-compare against a whole-file `index.md` read.
+Once the renamed stem is settled, run the duplicate check before moving anything: `kb-dup-check "<renamed stem>" [--url <url from the _summary.md frontmatter>]`. On `DUP` or `NEAR`, report the match and wait for the user's direction (move anyway, or stop); on `ERROR`, say the check could not complete and ask whether to proceed.
+
+**Without the script, run the targeted lookup instead:** `grep -i -F "<renamed stem>" index.md`, plus `grep -i -F "<url>" index.md` when the frontmatter carries one. A hit is a `DUP` (show the matched row), no hit is an `OK`, and a grep that cannot run, because `index.md` is missing or unreadable, is an `ERROR`. `NEAR` has no fallback and needs the script. **Never eyeball-compare against a whole-file `index.md` read.** That prohibition is about reading the index into context and judging by eye; a `grep` for one stem reads back one line and is the sanctioned substitute.
 
 #### Step 4: Move all artifacts
 
@@ -78,8 +80,8 @@ If the source directory is empty after the move, offer to remove it. If files re
 
 #### Step 5: Update index, recents, and search (Mode 3)
 
-- Ensure the moved `_summary.md` carries the frontmatter block, adding it if the source predates frontmatter (deriving `index_line` per the one-sentence rule in Index Format), with `topic:` set to the destination folder and `tags:` defaulted to `[<topic>]`. Then run `kb-index`.
-- Rebuild `aa-recents/` by running `kb-recents` (same script as Mode 1).
+- Ensure the moved `_summary.md` carries the frontmatter block, adding it if the source predates frontmatter (deriving `index_line` per the one-sentence rule in Index Format), with `topic:` set to the destination folder and `tags:` defaulted to `[<topic>]`. Then run `kb-index`; without the script, regenerate the whole table from every summary's frontmatter, never by appending one row (`SKILL.md`, Helper commands).
+- Rebuild `aa-recents/` by running `kb-recents` (same script as Mode 1); without the script, skip the rebuild and say so once. It is a browse view and nothing else reads it.
 - Refresh the full-text database so the moved item is findable via `kb search` and future `kb ask`:
   ```bash
   kb-search reindex --incremental

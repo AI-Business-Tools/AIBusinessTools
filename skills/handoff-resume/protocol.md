@@ -6,30 +6,44 @@ This file is the canonical source for writing session log entries, handoffs, and
 
 A handoff is a structured summary written to `CLAUDE.local.md` that captures session state for the next thread. It is different from a raw conversation export, which dumps the full transcript. A handoff is concise, structured, and optimized for a new session to pick up where this one left off.
 
-**Manual trigger:** when the user says "write a handoff," write a handoff entry to `CLAUDE.local.md` in the working directory.
+## When this fires
 
-**Auto-trigger (optional):** if your skills have Session Log sections, configure them to ask whether to write a handoff, but only when the session involved multiple rounds of edits, troubleshooting, or content iteration. A clean single-pass run does not prompt for a handoff.
+**A handoff is written once, at the end of a session, and only when the user types one of the handoff trigger phrases listed at the end of this file. Resume runs only at the start of a session, on its own trigger. On every other turn this protocol does nothing.**
+
+Never write, offer, or prepare a handoff on your own judgment, and never write more than one per trigger. Finishing a piece of work is not a trigger. Editing several files is not a trigger. A session that feels like a good stopping point is not a trigger. The user's word is the only trigger.
+
+**Optional, for skill authors. This paragraph is not an instruction to Claude.** If you write your own skills, you may configure one to offer a handoff at the end of a long session. Absent that configuration, Claude never offers one.
 
 ---
 
 ## Where things live
 
-- **`CLAUDE.local.md`** (project root, auto-loaded): the rolling state file. Short session log entries plus exactly one handoff entry, the most recent.
-- **`changelog/`** (in the project folder, or a single shared changelog folder; not auto-loaded): per-session detailed records with file-level edit detail, key decisions, and rationale. This is the audit trail for rollback. It is reached from `CLAUDE.local.md` through the **Detail** field.
+- **`CLAUDE.local.md`** (project root, auto-loaded): the rolling state file. Short session log entries plus exactly one handoff entry, the most recent. It holds one person's working state, so in a shared repository add it to `.gitignore`; commit it only where the whole team wants the same session history, and never where it would push private working notes into a public repo.
+- **`changelog/`** (in the project folder, or a single shared changelog folder; not auto-loaded): per-session detailed records with file-level edit detail, key decisions, and rationale. This is the audit trail for rollback. It is reached from `CLAUDE.local.md` through the **Detail** field. Create the folder the first time a changelog file is written: a **Detail** link resolves only once the folder and the file it names both exist.
+- **The project's status record** (optional; many projects have none): whichever single file the project keeps its open items in, such as a tracker's open section, a punch list, a phase table, or an issues file. It is the open set, so a handoff points at it by path instead of copying its rows, and a resume prints its items. **Where a project keeps none, the handoff's Open issues field is the open set**, and every still-open item survives by being carried forward into each new handoff under the carry-forward rule below. Start a status record once that list outgrows a few lines.
 - **`CLAUDE.md`, your project standards files, and your skill files** (durable rules): rulings that should shape future work go here, not in a rotating log. A project-scoped rule goes in that project's `CLAUDE.md`; a rule that applies across projects goes wherever your setup keeps cross-project instructions; a rule a skill enforces goes in that skill file.
 
-A durable rule in a rotating log is lost at the next rotation, and a durable rule in a changelog is never read, because changelog files are not loaded at session start. Route it to a file that is read.
+**A durable rule in a rotating log is lost at the next rotation, and a durable rule in a changelog is never read, because changelog files are not loaded at session start.** A rule parked in either place disappears without anyone noticing, which is the one failure in this protocol that leaves no evidence behind. Route it to a file that is read:
+
+- a project guardrail goes into the project's `CLAUDE.md`, which auto-loads every session, and is the first choice wherever one exists;
+- a detailed convention goes into the project's standards file, read on demand;
+- where no `CLAUDE.md` exists, the project's root `README.md`, which the resume reads, carries the guardrail;
+- a rule a skill enforces goes into that skill file.
 
 ---
 
 ## When to write what
 
-| Session type | Session log entry? | Changelog file? | Handoff entry? |
-|---|---|---|---|
-| Routine work in a project folder | Yes | No | Only if the session involved multi-round edits or troubleshooting |
-| Session that edits skills, scripts, protocols, or other durable configuration | Yes | Yes | Usually yes |
-| Ad-hoc research or lookups producing no changes | No | No | No |
-| Trivial edits | No | No | No |
+**This section is consulted only after the user has triggered a handoff. It never decides whether to start one.**
+
+**Once the user triggers a handoff, both records are always written: the session log entry and the handoff entry.** Neither is conditional. A short session, a session of small edits, and a session that only answered questions all get both, because the user asked for a handoff and a trigger that produces nothing is a broken trigger. The one judgment left is whether the session also warrants a changelog file, and that is what this table answers.
+
+| Session type | Changelog file? |
+|---|---|
+| Routine work in a project folder | No |
+| Session that edits skills, scripts, protocols, or other durable configuration | Yes |
+| Ad-hoc research or lookups producing no changes | No |
+| Trivial edits | No |
 
 ---
 
@@ -40,12 +54,12 @@ Terse, targeting 3 to 5 lines.
 ```markdown
 ## [YYYY-MM-DD] - [topic]
 - **Skill:** [skill name, or `ad-hoc`]
-- **Summary:** [1-2 sentences, 30 words maximum. What changed; not why or how.]
+- **Summary:** [1-2 sentences, within the 30-word cap. What changed; not why or how.]
 - **Status:** [complete / pending / partial]
 - **Detail:** [YYYY-MM-DD-topic.md](changelog/YYYY-MM-DD-topic.md)  (optional; omit when there is no changelog file)
 ```
 
-The Summary cap is a ceiling, not a target. When you need more than two sentences, write a changelog file and point at it from **Detail**. Do not let the Summary grow into a small changelog, which is the failure this format exists to prevent. 30 words is the recommended default.
+The 30-word cap is a ceiling, not a target. When you need more than two sentences, write a changelog file and point at it from **Detail**. Do not let the Summary grow into a small changelog, which is the failure this format exists to prevent.
 
 Worked example:
 
@@ -61,7 +75,7 @@ A skill may add one skill-specific field, for example **Source:** for a content-
 
 **The session log entry carries no file list and no rationale paragraph.** File-level detail and reasoning go in the changelog file when the session warrants one, and nowhere when the session does not. Durable rulings go to the files named under "Where things live."
 
-Which kind of session gets which kind of entry: a session that changed something a later session must find gets an entry; a session that answered a question and changed nothing does not. A session that changed durable configuration gets an entry and a changelog file, because that is the class of change someone will later need to trace or reverse.
+Every triggered handoff writes this entry, whatever the session held. What varies is the changelog file beside it: a session that changed durable configuration gets one, because that is the class of change someone will later need to trace or reverse, and a session that answered a question and changed nothing does not.
 
 ---
 
@@ -70,10 +84,10 @@ Which kind of session gets which kind of entry: a session that changed something
 ```markdown
 ## [YYYY-MM-DD] - Handoff
 - **Session summary:** [1-2 sentences on what was accomplished]
-- **Open issues:** ["none blocking", with nothing after it, is the expected outcome of a clean session and a stronger report than a list. An item earns this field only if it blocks the user, changes a deliverable they will use, or needs a decision only they can make now. Where the project keeps a status record, name it by path and stop there; the record holds the open set, and re-listing its rows here duplicates the file that is supposed to win. A defect you could fix now is not an open issue: fix it and omit it. This field is not an exemption from carry-forward below; the bar decides what is listed here, not what survives, and an item that fails the bar moves to the status record rather than being dropped.]
+- **Open issues:** ["none blocking", with nothing after it, is the expected outcome of a clean session and a stronger report than a list. An item earns this field only if it blocks the user, changes a deliverable they will use, or needs a decision only they can make now. Where the project keeps a status record, name it by path and stop there; the record holds the open set, and re-listing its rows here duplicates the file that is supposed to win. A defect you could fix now is not an open issue: fix it and omit it. This field is not an exemption from carry-forward below; the bar decides what is listed here, not what survives, and an item that fails the bar moves to the status record rather than being dropped. Where the project keeps no status record, this field is the open set: the item stays here and is carried forward.]
 - **Next steps:** [work the next session does. Anything requiring a decision from the user is raised in the session itself, where it stays visible until answered, rather than parked here where it dies at the next rotation. What remains is informational, and each item names what goes wrong if nobody does it, in terms the user recognizes.]
 - **Context for next session:** [anything the next thread needs to know that is not obvious from the files themselves]
-- **Context sources:** [files and folders the next session should read at startup, in priority order, with paths relative to the project folder. Prefer digested files over raw sources. Scope each pointer to what the next session must actually read inside it: the part of the file, the condition for reading it at all, or how to read it. A bare path means the whole file, and the whole file is what a resume will read. Name files rather than a folder wherever you can; a folder's weight cannot be measured when the handoff is written.]
+- **Context sources:** [files and folders the next session should read at startup, in priority order, with paths relative to the project folder. Prefer digested files over raw sources. Scope each pointer to what the next session must actually read inside it: the part of the file, the condition for reading it at all, or how to read it. A bare path means the whole file, and the whole file is what a resume will read. Name files rather than a folder wherever you can; what a folder will hold cannot be known when the handoff is written.]
 - **Pre-digested:** [any `_text.md`, `_summary.md`, `_notes.md`, or other processed files that exist and are current. These are cheaper to read than re-processing the source.]
 - **Active skill:** [which skill was last used or should be used next, so the next session routes correctly without asking]
 - **Detail:** [YYYY-MM-DD-topic.md](changelog/YYYY-MM-DD-topic.md)  (optional; omit when there is no changelog file)
@@ -107,7 +121,7 @@ Write the session log entry first, then the handoff entry. If a skill's Session 
 
 **Keep exactly one handoff entry in `CLAUDE.local.md`: the most recent.** On each handoff write, append the new handoff entry first, then delete the retired one, so the file never has a moment with no handoff. When two handoff entries share a date, the retired one is the earlier in file order, and the day's second and later are headed `Handoff (2)`, `Handoff (3)`.
 
-The retired handoff's paired session log entry is its permanent record. **Leave nothing in its place:** no tombstone line, no "retired here per the retention rule" note, no marker of any kind. The session log entry above it already is that record, and the file's size budget pays for every duplicate of it. Such notes accumulate, and they are billed to whichever entry precedes them, so an entry can fail its size check on text its own author never wrote.
+The retired handoff's paired session log entry is its permanent record. **Leave nothing in its place:** no tombstone line, no "retired here per the retention rule" note, no marker of any kind. The session log entry above it already is that record, so a marker says nothing the file does not already say, and such markers accumulate into a layer of bookkeeping every later session reads past.
 
 ### Carry-forward is mandatory
 
@@ -117,7 +131,7 @@ The retired handoff's paired session log entry is its permanent record. **Leave 
 
 **Rewrite each carried item into the description-plus-identifier form above rather than copying it verbatim.** A bare identifier written once is otherwise reproduced by this rule in every handoff and every resume report until the item closes.
 
-A handoff is a session-to-session instrument, not an archive. Anything that must outlive one session belongs in the project's status record, or in the destination the size budget routing names below, never in a handoff alone.
+A handoff is a session-to-session instrument, not an archive. Anything that must outlive one session belongs in the project's status record, or in the destination named under "Where things live" above, never in a handoff alone. Where the project keeps no status record, the handoff is the only carrier the item has, and the carry-forward rule above is the whole of what keeps it alive; that fragility is the argument for starting a status record.
 
 ---
 
@@ -125,7 +139,7 @@ A handoff is a session-to-session instrument, not an archive. Anything that must
 
 Create a changelog file when a session touches skills, scripts, protocols, or other durable configuration, meaning anything that would need an audit trail if something breaks. Skip it for routine content processing, single-deliverable builds, or one-off research, unless the session made structural changes.
 
-Naming: `YYYY-MM-DD-topic.md`, where topic is a short kebab-case descriptor.
+Naming: `YYYY-MM-DD-topic.md`, where topic is a short kebab-case descriptor. Create the `changelog/` folder if the project does not have one yet, before writing the file; a **Detail** link points at a path, and the path resolves only once the folder and the file both exist.
 
 Content: full file-level edit detail (which files, which sections or lines), key decisions and rationale, and open issues at the time of the session. This is the detail that would otherwise bloat `CLAUDE.local.md`.
 
@@ -151,85 +165,15 @@ Content: full file-level edit detail (which files, which sections or lines), key
 
 ---
 
-## Close the status list in the same step
-
-If the project keeps a status list (a tracker's open section, a punch list, a phase table), update it in the same step as the changelog write, not later. Shipping work and leaving its line open is what makes a tracker lie.
-
-Two rules keep such a list trustworthy:
-
-- **One place holds status.** Everything else in the document is narrative and history. A heading elsewhere saying "Queued next" or "Pending" describes what was true when it was written. Say so in the document, so a later reader does not mistake prose for state.
-- **Every open item carries the check that proves it is still open**: a command, a search, a validator run, or a file condition. Then answering "what is open" means running the checks rather than reading the list. Items that cannot be reduced to a check (a judgment call, a design decision, something needing the user's eye) go in a separate section with an owner, or stay in the list with the check recorded as "none, by nature" and an owner named, never with a fabricated check.
-
-Reporting an item as open is a claim about state and takes the same verification as reporting one done. Both directions fail in practice: work that shipped days earlier reported as still open, and a defect asserted from a source file without opening the artifact that would have shown it absent.
-
----
-
-## Size budget
-
-`CLAUDE.local.md` auto-loads in full at the start of every session in its folder, so its length is a fixed tax on every session in that project, paid whether or not the session ever looks at it. The entry formats above cap the parts; nothing caps the whole. This does.
-
-**Recommended defaults, two of them enforced:**
-
-| What | Ceiling | Enforced? |
-|---|---|---|
-| The whole `CLAUDE.local.md` file | 20,000 characters | Yes |
-| The handoff entry | 6,000 characters | Yes |
-| The session log entry just written | 2,000 characters | Advisory; report, never fail |
-| The Summary field of the entry just written | 30 words | Advisory |
-
-Measure at the end of every handoff write, before reporting the result. The file total is one command:
-
-```bash
-wc -c CLAUDE.local.md
-```
-
-For a single entry, from its heading to the next `## ` heading:
-
-```bash
-awk -v h="## 2026-03-14 - Handoff" 'index($0,h)==1{f=1} f && $0!~"^"h && /^## /{f=0} f' CLAUDE.local.md | wc -c
-```
-
-This is a rough check: it mismeasures when two entries share a heading string, which real files do carry as duplicate-dated headings, and it does not know which ceiling applies, so compare its number against 6,000 for a handoff heading and against the advisory 2,000 for anything else. If you automate the check, have the script report the file total, any handoff entry over its ceiling, the newest session log entry against the advisory ceiling, and the count of Summary fields over the word cap, and have it count multi-line Summary fields correctly, which a one-line text filter will not.
-
-**Why only two of the four are enforced, and why the third looks at one entry.** The writer of today's handoff can fix the file total and the handoff entry. It cannot fix a session log entry written months ago. There is exactly one handoff in the file under the retention rule, so the enforced entry is always the one just written. The log ceiling reaches the same place by narrowing: it measures only the newest session log entry. A check that fires on old entries nobody will repair prints a flag forever, and that is how a reader learns to ignore the check that matters.
-
-**A useful addition: report what the handoff's pointer fields will cost.** Count the files that **Context sources** and **Pre-digested** name and total their size, and report that number alongside the file total. Give it no ceiling. The number is the whole instrument: a reading list that states its own weight stops being append-only.
-
-### When a ceiling is exceeded
-
-- **The handoff entry is over its ceiling.** Trim narrative, evidence, and restatement of files the resume already reads, moving that detail into the session's changelog file and pointing at it from **Detail**. Never trim an open issue, a next step, or a context source to meet the ceiling. When open items alone push the handoff over, they belong in the project's status record and the handoff points at it by path; where the project has no status record, the handoff exceeds the ceiling and the writer reports the overage and the reason in one line. An over-budget handoff that carries the truth beats a compliant one that does not.
-- **The file is over its ceiling.** First move the oldest session log entries, in date order, into a project archive file (an existing history folder, or `history/session-log-archive.md` created where neither exists), until the file is under. Entries are moved verbatim, never deleted. Leave one line in their place: `*Session log entries before YYYY-MM-DD are archived in [path] (N entries).*` If archiving history cannot bring the file under, trim the handoff bodies themselves, and relocate any durable rule per the routing below.
-- **The new Summary is over the word cap.** The entry names more than the format holds. That is a changelog file and a **Detail** pointer, not a longer Summary. Pre-existing over-cap Summaries in old entries are history; leave them and archive them in due course.
-- **The newest session log entry is over the advisory ceiling.** Same reading: shorten the one being written. This never fails the check.
-
-**Make one cut sized to the whole overage, then re-measure once.** Converging in small shavings is the common failure: three or more check runs on a single write means the cuts are too small, not that the entry is too long.
-
-**What a trim should cut.** Most of what a trim removes is the same facts written smaller, or content that moves to another file; only a small share is genuinely disposable, and that share is almost entirely one thing: re-listing the rows of a status record inside a handoff whose own text says the record wins. Cut that first. Relocation is the expensive disposition and the last to reach for, because text moved out of one file is usually rewritten longer in the file it lands in, and it may land somewhere the project does not read at session start.
-
-### Where the overflow goes
-
-Narrative, evidence, and reasoning go to the changelog. That is their right home and they stay one read away.
-
-**A durable rule never goes to the changelog, because the changelog is not read at session start.** Route it instead:
-
-- a project guardrail goes into the project's `CLAUDE.md`, which auto-loads every session, and is the first choice wherever one exists;
-- a detailed convention goes into the project's standards file, read on demand;
-- where no `CLAUDE.md` exists, the project's root `README.md`, which the resume reads, carries the guardrail;
-- a rule a skill enforces goes into that skill file.
-
-A carry-forward rule trimmed into a changelog to meet a byte budget is silently lost, which is the failure this budget exists to prevent, not to cause.
-
----
-
 ## The handoff confirmation
 
-**Three slots, no fourth:** what was written, the measured total and any flags, and the result of any sync or push that ran. Anything needing the user's attention is raised before the handoff is written, so nothing is left to add by the time the confirmation is composed. Where something does survive to this point, it goes into the handoff or the status record and the confirmation names it by path rather than restating it. Nothing appears in the confirmation for the first time.
+The confirmation is the short message sent to the user in chat once the handoff is written, and it has **three slots, no fourth:** which entries were written and to which files, anything the write itself turned up (an open item that could not be carried, a pointer that no longer resolves), and the result of any commit, sync, or backup that ran. For example: `Wrote the session log entry and the handoff entry to CLAUDE.local.md, plus changelog/2026-03-14-report-generator-refactor.md. Nothing flagged. No commit run.` Anything needing the user's attention is raised before the handoff is written, so nothing is left to add by the time the confirmation is composed. Where something does survive to this point, it goes into the handoff or the status record and the confirmation names it by path rather than restating it. Nothing appears in the confirmation for the first time.
 
 ---
 
 ## General rules
 
-- **Append new session log entries; never overwrite or delete them.** Session log entries accumulate. Handoffs rotate under the retention rule. Moving the oldest entries verbatim into the archive file, with the pointer line left in place, is relocation rather than deletion, and is the one sanctioned way history leaves this file.
+- **Append new session log entries; never overwrite or delete them.** Session log entries accumulate; handoffs rotate under the retention rule. When the accumulated entries have grown long enough to be in the way, move the oldest ones, in date order, verbatim into a project archive file, and leave one line in their place: `*Session log entries before YYYY-MM-DD are archived in [path] (N entries).*` That relocation is the one sanctioned way history leaves this file. Deleting an entry is not.
 - **Relative paths.** File references in `CLAUDE.local.md` are relative to the folder containing it, not absolute. Changelog files may use absolute paths, since they are write-once audit records.
 - **If `CLAUDE.local.md` does not exist**, create it with:
 
@@ -245,6 +189,8 @@ A carry-forward rule trimmed into a changelog to meet a byte budget is silently 
 
 **Handoff triggers:** "handoff", "write a handoff", "save a handoff", "handoff for next session", "ho", "ho todo [tasks]", "handoff todo [tasks]"
 
+**The short forms `ho` and `re` are recognized only when they are the user's entire message**, never when those two letters appear inside a sentence.
+
 ---
 
 ## Resume
@@ -259,9 +205,7 @@ When the user types **"resume"** at the start of a session:
 
    **Also read `README.md` at the working directory root when one exists, whether or not the handoff names it.** A project's front-door README orients the session, and where the project has no `CLAUDE.md` it also carries the durable rules. A handoff rotates, and its Context sources list is one careless entry away from dropping the pointer. Read only that root-level file, never READMEs deeper in the tree, and where the file turns out to be a developer setup guide rather than a project front door, note it and move on.
 
-   **Read the project's status record too, where it keeps one, and print its open items in the step 4 report:** every open item, in priority order, one line each, never a summary and never prose in place of the list. The record is the open set and the handoff is not. A handoff froze when it was written, and its **Open issues** field points at the record rather than listing its rows, so a resume that reads only the handoff reports no open work however much is open.
-
-   Where an open item names a check that is a single command, run it, and where the result shows the item's own premise no longer holds, say so in the report and name the item for closing. Do not close it in the resume, which reports and waits, and do not go looking for checks an item does not name.
+   **Read the project's status record too, where it keeps one, and print its open items in the step 4 report:** every open item, in priority order, one line each, never a summary and never prose in place of the list. The status record is whichever single file the project keeps its open items in, a tracker's open section, a punch list, a phase table, or an issues file; many projects keep none, and there the handoff's own **Open issues** field is the open set. The record is the open set and the handoff is not. A handoff froze when it was written, and its **Open issues** field points at the record rather than listing its rows, so a resume that reads only the handoff reports no open work however much is open.
 
    A project `CLAUDE.md`, where one exists, auto-loads at session start the same way `CLAUDE.local.md` does. Its rules are already in context, so do not re-read it as a ritual step. When a project defines its own session-start ritual in its `CLAUDE.md`, that ritual extends this procedure; it never replaces the steps here.
 
@@ -277,10 +221,10 @@ When the user types **"resume"** at the start of a session:
    > - Project state (as of [handoff date]): [1-2 sentence summary from the handoff]
    > - Active skill: [from the handoff, or "none specified"]
 
-   **Open items** (from [status record path]; omit this heading and its list where the project keeps no record):
+   **Open items** (from [status record path], or from the handoff's **Open issues** field where the project keeps no status record; omit this heading and its list where there are none):
 
-   1. `[ID]` - [at most twelve words of plain language, never the item body]
-   2. `[ID]` - [...]
+   1. [the item's ID first where the record uses IDs, and nothing in its place where it does not, then at most twelve words of plain language, never the item body]
+   2. [same]
 
    **Next steps** (from the handoff):
 
@@ -300,13 +244,15 @@ If no handoff entry exists in `CLAUDE.local.md`, read the most recent session lo
 
 **Triggers:** "resume", "pick up", "catch me up", "re"
 
+**The short forms `re` and `ho` are recognized only when they are the user's entire message**, never when those two letters appear inside a sentence.
+
 ---
 
 ## Context (full load)
 
 When the user types **"context"**, run the full Resume protocol above (steps 1 to 5), then additionally:
 
-6. **Scan for context folders.** List the working directory and check for any immediate subfolder whose name matches, case-insensitively: `context`, `content`, `content for context`, or any name starting with `aa context`. Also check for names containing "context for this".
+6. **Scan for context folders.** List the working directory and check for any immediate subfolder whose name, case-insensitively, is `context` or `content`, or contains the word "context" (for example `context for this project`, or a name your own filing convention prefixes).
 
 7. **Read context folders in full.** For each matching folder, read every file in it, without recursing into sub-subfolders. For PDFs over 4 pages, read the first 4 pages only and note that the remainder was skipped. For binary files (images, `.pptx`, `.xlsx`), note their presence but do not read them.
 

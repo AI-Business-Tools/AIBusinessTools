@@ -10,7 +10,7 @@ A knowledge base drifts. You drop a file into a topic folder manually, you renam
 
 This skill runs a periodic sweep with two phases.
 
-**Phase 1: Sync.** Scan every topic folder. Add index entries for documents that are present on disk but missing from `index.md`. Remove index entries for files that no longer exist. Refresh `topics.md` based on current folder contents.
+**Phase 1: Sync.** Scan every topic folder and regenerate `index.md` in one pass from every summary's frontmatter. Documents present on disk but missing from the index appear; rows for files that no longer exist drop out. Both happen because the table is rebuilt, not because rows are edited into or out of it. Refresh `topics.md` based on current folder contents.
 
 **Phase 2: Health check.** Surface drift the user should look at: source files without summaries, summaries without source files, files that violate the naming convention, possible duplicates, and topic-folder placement suggestions.
 
@@ -19,7 +19,7 @@ The skill never deletes source files and never overwrites summaries. It proposes
 ## The Flow
 
 1. **Identify the knowledge base root.** Edit the path placeholder in `SKILL.md` to match where your knowledge base lives.
-2. **Step 1: Sync the index.** The skill reads `index.md`, scans all topic folders, and computes the diff: entries to add (documents on disk but not indexed), entries to remove (indexed but missing), and `topics.md` updates.
+2. **Step 1: Sync the index.** The skill walks every summary under both storage patterns, rebuilds `index.md` from their frontmatter, and reports the difference: rows added, rows dropped, and `topics.md` updates. It never edits a row in place; to change what a row says, edit that document's summary frontmatter and run the sync again.
 3. **Step 1b: Clean up the inbox build folder.** Stale split directories from the `knowledge-base` Process Inbox flow are identified and removed if the source file has already been filed.
 4. **Step 2: Health check.** The skill reports missing summaries, orphaned summaries, naming inconsistencies, duplicate content, and topic placement suggestions. Each issue is presented with a proposed fix; the user confirms before any changes are made. A folder is flagged for a missing summary only when it holds a real source, and a folder that is deliberately not a document can carry a `.kbskip` sentinel so it is reported as suppressed rather than flagged on every run.
 5. **Step 2b: Overflow re-homing review.** Once a catch-all folder passes about 50 items, the skill reads the frontmatter of what is in it and proposes specific re-homes, so the folder that absorbs everything without an obvious home does not quietly become a second inbox.

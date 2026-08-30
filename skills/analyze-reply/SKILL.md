@@ -1,7 +1,7 @@
 ---
 name: analyze-reply
-description: Analyze forwarded content for factual accuracy, then draft a reply in the user's voice. Use when the user provides forwarded content and asks for analysis, fact-checking, or a reply.
-triggers: analyze this, fact-check this, reply to this article, what do you think of this piece, draft a reply to this, vet, vet this
+description: Analyze forwarded content for factual accuracy, then draft a reply in the user's voice. Use when the user provides forwarded content and asks for analysis, fact-checking, or a reply. Triggers on "analyze this", "fact-check this", "vet", "vet this", "reply to this article", "what do you think of this piece", and "draft a reply to this".
+when_to_use: Use when the user forwards or pastes an article, a post, a newsletter, or a message and asks what to make of it, whether its claims hold up, or for a reply written in their own voice. The word "vet" applied to forwarded content selects this skill in analysis-only form, where the claim analysis is produced and the reply draft is skipped.
 ---
 
 # Analyze & Reply

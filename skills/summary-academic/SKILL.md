@@ -1,7 +1,7 @@
 ---
 name: summary-academic
-description: Academic paper summarizer for papers, research articles, and scholarly publications. Structured summaries with citations, thesis, conclusions, methodology, implications, and critical analysis.
-triggers: summarize this paper, summarize this research, academic summary, /academic-summary, quick academic summary, brief paper summary, /academic-summary quick
+description: Academic paper summarizer for papers, research articles, and scholarly publications. Structured summaries with citations, thesis, conclusions, methodology, implications, and critical analysis. Triggers on "summarize this paper", "summarize this research", "academic summary", "/academic-summary", "quick academic summary", "brief paper summary", and "/academic-summary quick".
+when_to_use: Use when the source is scholarly, a journal article, a preprint, a working paper, a dissertation, or a conference paper, and the user wants it summarized with its thesis, methodology, conclusions, implications, and a critical read. Use summary-general instead for news articles, blog posts, videos, podcasts, and other non-scholarly sources. A request for a quick or brief summary selects the short form of this same skill rather than a different one.
 ---
 
 # Academic Paper Summary

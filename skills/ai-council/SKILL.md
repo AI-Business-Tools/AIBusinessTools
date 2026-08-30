@@ -1,7 +1,7 @@
 ---
 name: ai-council
-description: "Run any question, idea, or decision through a council of 5 AI advisors who independently analyze it, peer-review each other anonymously, and synthesize a final verdict. Adapted from Andrej Karpathy's LLM Council methodology."
-triggers: council, council this, run the council, war room this, pressure-test this, stress-test this, debate this
+description: "Run any question, idea, or decision through a council of 5 AI advisors who independently analyze it, peer-review each other anonymously, and synthesize a final verdict. Adapted from Andrej Karpathy's LLM Council methodology. Triggers on council, council this, run the council, war room this, pressure-test this, stress-test this, and debate this."
+when_to_use: Use when the user wants a question, idea, plan, or decision pressure-tested by several independent advisors rather than answered directly, including asking to run the council, war room something, stress-test a claim, or debate a position. Use ai-council-deep instead when the answer is expensive to get wrong or the user is still unsure what they are asking, because that variant stops for clarification before the advisors run.
 ---
 
 <!-- Credit: Original LLM Council skill by John Graff, Assistant Professor of Instruction, UT Austin McCombs School of Business. Adapted from Andrej Karpathy's LLM Council methodology. -->

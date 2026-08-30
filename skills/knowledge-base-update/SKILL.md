@@ -1,8 +1,8 @@
 ---
 name: knowledge-base-update
-description: Knowledge base sync and health check for the knowledge-base skill. Scans all topic folders for unindexed documents, removes index entries for missing files, refreshes topic descriptions, cleans up stale split directories, and reports health issues (missing summaries, naming inconsistencies, orphaned files, duplicate content).
-triggers: kb update, kb up, update kb, kb sync
-allowed-tools: Bash(python*), Bash(pip*), Bash(ls*), Bash(mv*), Bash(cp*), Bash(mkdir*), Bash(find*), Bash(wc*), Bash(file*), Read, Write, Edit, Glob, Grep, Agent
+description: Knowledge base sync and health check for the knowledge-base skill. Scans all topic folders, regenerates index.md from every summary's frontmatter so new documents appear and rows for deleted files drop out, refreshes topic descriptions, cleans up stale split directories, and reports health issues (missing summaries, naming inconsistencies, orphaned files, duplicate content). Triggers on "kb update", "kb up", "update kb", and "kb sync".
+when_to_use: Use when the user asks to update, sync, or health-check a knowledge base that already exists, so the index is rebuilt from the summaries currently on disk and the corpus is reported on. Use knowledge-base instead when new material is being processed from the inbox, when a question is being answered from the corpus, when it is being searched, or when pipeline output is being filed into a topic folder.
+allowed-tools: Bash(python*), Bash(pip*), Bash(ls*), Bash(mv*), Bash(cp*), Bash(mkdir*), Bash(find*), Bash(wc*), Bash(file*), Bash(grep*), Bash(rm -rf *_build/split_*), Bash(rmdir*), Bash(kb-index*), Bash(kb-search*), Bash(kb-recents*), Read, Write, Edit, Glob, Grep, Agent
 model: sonnet
 effort: medium
 ---
@@ -25,24 +25,27 @@ All paths in this skill are relative to that root. A common default is `~/knowle
 
 The knowledge base supports two document storage patterns:
 
-**Pattern A: Per-document subfolder** (output of a content pipeline like `slides-content`)
+**Pattern A: Per-document subfolder** (the default for all new filing: the `knowledge-base` Process Inbox mode, `kb move`, and every content pipeline that writes into the knowledge base)
 ```
 <knowledge-base-root>/
 ├── topic-folder/
-│   ├── 2026-01-28 Author. Title./
-│   │   ├── Title._text.md
-│   │   ├── Title._summary.md
-│   │   └── Title._slides.pdf
+│   ├── 2026-01-28 Author. Title/
+│   │   ├── 2026-01-28 Author. Title.pdf
+│   │   ├── 2026-01-28 Author. Title_text.md
+│   │   ├── 2026-01-28 Author. Title_summary.md
+│   │   └── 2026-01-28 Author. Title_slides.pdf
 ```
 
-**Pattern B: Flat files** (output of the `knowledge-base` Process Inbox mode)
+**Pattern B: Flat files** (legacy; nothing produces this any more, and every reader still handles it)
 ```
 <knowledge-base-root>/
 ├── topic-folder/
 │   ├── 2026-03-18 Author. Title.pdf
-│   ├── 2026-03-18 Author. Title._text.md
-│   └── 2026-03-18 Author. Title._summary.md
+│   ├── 2026-03-18 Author. Title_text.md
+│   └── 2026-03-18 Author. Title_summary.md
 ```
+
+Expect most of a working knowledge base to be Pattern A and a shrinking tail of it to be Pattern B. A Pattern B item is not a defect and is never flagged as one; a slides run promotes one to Pattern A when it touches it.
 
 Topic folders are dynamic: any immediate subdirectory of the knowledge base root other than the inbox folder, any blog folder, any auxiliary folders (for example, a recents or symlink folder, a search-index or database folder, or a documentation folder that describes the knowledge base process itself rather than holding indexable content), and any `*_build/` directory is a topic folder. When scanning, search both patterns:
 - Flat: `<topic-folder>/*_summary.md`
@@ -62,7 +65,7 @@ Topic folders are dynamic: any immediate subdirectory of the knowledge base root
 | 2026-03-18 | Last | Document Title | topic-folder | One-line summary of the document |
 ```
 
-Each row comes from one summary's frontmatter, so the summaries are the source of truth and the table is the rendering. Regenerate a row from its summary rather than editing the row in place; a hand-edited row is the first thing to go stale, because nothing downstream knows it was changed. If you script the regeneration, the script owns the whole file; if you do not, have Claude rebuild the affected rows from the frontmatter it reads.
+Each row comes from one summary's frontmatter, so the summaries are the source of truth and the table is the rendering. Regenerate rather than editing a row in place; a hand-edited row is the first thing to go stale, because nothing downstream knows it was changed. If you script the regeneration, the script owns the whole file; if you do not, have Claude rebuild the table from the frontmatter it reads. Either way the unit of work is the whole file, not one row.
 
 **Summary cell rule:** the Summary cell is one sentence that locates and disambiguates the document. It does not summarize it, because the `_summary.md` holds the detail. Target 30 words or fewer. A single dense sentence carrying distinguishing figures may run longer, but it stays one sentence and never becomes a paragraph.
 
@@ -81,12 +84,13 @@ One- to two-sentence description of what this folder collects.
 
 ### Step 1: Sync the index
 
-Scan all topic folders for documents not in `index.md`. Do not descend into any subfolder named `materials/`; its contents are reference-only and must not appear in the index.
+**`index.md` is generated from the summaries, so this step regenerates the whole table rather than editing rows into it.** Scan all topic folders. Do not descend into any subfolder named `materials/`; its contents are reference-only and must not appear in the index.
 
-For each unindexed document found:
-- If it has a `_summary.md`, read it and append an index entry
-- If it has a source file but no `_summary.md`, note it as missing (do not generate; report it)
-- Remove entries in `index.md` for files that no longer exist on disk
+1. **Walk every `_summary.md` under both storage patterns** (`<topic-folder>/*_summary.md` and `<topic-folder>/*/*_summary.md`), render one row per file from its frontmatter, and write `index.md` in a single pass. A document appears because its summary exists, and a row for a file that is gone disappears because the walk no longer finds it, so adding and removing entries are not separate operations here.
+2. **Report what changed** by comparing the row count and the stems before and after: N rows added, M rows dropped. That is the sync summary.
+3. **A source file with no `_summary.md` produces no row.** Note it as a missing summary and report it; do not generate one, and do not write a placeholder row for it.
+
+**Never append or hand-edit an individual row**, in this step or any other. A row edited in place disagrees with the summary that nothing knows was changed, and the next regeneration silently reverts it. To change what a row says, edit that item's frontmatter and regenerate. If the `knowledge-base` skill's index generator is wired on this system, run it and let it own the whole file; if it is not, Claude does the same walk by hand.
 
 Update `topics.md` with current folder descriptions based on the contents of each folder. Existing descriptions are not overwritten if the folder's purpose has not changed; new folders get a draft description for the user to refine.
 
@@ -96,7 +100,7 @@ The refresh maintains decision tests, not just descriptions. If any filing was c
 
 Scan the inbox build folder (e.g., `<inbox>/<inbox>_build/`) for split directories (`split_*/`). For each split directory, check whether the corresponding source file still exists in the inbox. If the source file has already been moved out of the inbox (i.e., it no longer exists there), the splits are stale and can be deleted.
 
-Present the list of stale split folders with their sizes, then delete them after confirmation. If the inbox build folder is empty after cleanup, remove it too.
+Present the list of stale split folders with their sizes, then delete them after confirmation. If the inbox build folder is empty after cleanup, remove it too with `rmdir`, which refuses on a folder that still holds anything. **Delete only `split_*` directories inside a `*_build/` folder; that is the one path shape `allowed-tools` grants, and nothing adjacent to it is a target.** Never delete a source file, a `_text.md`, a `_summary.md`, or the item folder itself.
 
 ### Step 2: Health check
 
@@ -123,7 +127,7 @@ The threshold is a default, not a constant. It exists because a catch-all folder
 
 - **Never delete original source files.** Rename and move only; never delete a source.
 - **Never overwrite existing summaries.** If a summary already exists, skip unless the user explicitly asks to regenerate.
-- **The summaries are the source of truth, not the index.** Add rows for new documents and remove rows for files that are gone, and take a row's content from its summary's frontmatter rather than editing the row directly. Do not silently change what a summary says in order to change how a row reads.
+- **The summaries are the source of truth, not the index.** Regenerate the whole table from their frontmatter; never add, edit, or delete a row directly. Do not silently change what a summary says in order to change how a row reads.
 - **Topic folders are user-created.** Suggest new folders but wait for approval before creating them.
 - **Read-only on `materials/`.** Never index, scan, or report on anything under a `materials/` subfolder.
 

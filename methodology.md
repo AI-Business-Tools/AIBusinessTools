@@ -64,7 +64,7 @@ A correction discovered during an audit can become a memory (Layer 2) or, if it 
 
 Every skill in this repository follows a common pattern:
 
-1. **Frontmatter** declares metadata: name, description, triggers, model, and effort level
+1. **Frontmatter** declares metadata: name, description, when_to_use, model, and effort level. The `description` is what Claude reads to decide whether to load a skill at all, so the phrases that should invoke it belong there; `when_to_use` refines that choice in prose, by naming what belongs to this skill rather than to a neighboring one.
 2. **Context loading** reads any prerequisite files (style guides, reference materials, project state)
 3. **Execution steps** define the procedural workflow
 4. **Quality gates** specify audit criteria and fix cycles

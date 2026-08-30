@@ -55,12 +55,18 @@ Files the output of a content skill (slides, summary, and so on) that ran outsid
 Keyword search over the full body of every summary and text extraction, for the "find me everything that touches X" question rather than "answer this." Returns ranked hits with snippets and file paths, and does not synthesize. This mode assumes a full-text index (the reference implementation is a SQLite FTS5 database; any equivalent works, and `grep -r` is the fallback). The full-text index is treated as a fast accelerator over the authoritative `index.md`, never as the source of truth for what the knowledge base contains.
 
 **Slides (`kb slides <target>`)**
-Build a slide deck from a knowledge base item, an inbox item, a file path, or a URL in one step, and keep the knowledge base correct on both sides of the build. The mode selects a generator and a tier, then takes one of two directions:
+Build a slide deck from a knowledge base item, an inbox item, a file path, or a URL in one step, and keep the knowledge base correct on both sides of the build.
 
-- **Already filed:** it reads the item's frontmatter and applies a reuse bar (a full deep read by a strong model). At the bar, the filed text and summary are reused and nothing is re-read. Below the bar, the item is re-ingested in place first, with the old artifacts preserved as timestamped copies, so the deck is never built on a thin record.
-- **New to the knowledge base, default deep tier:** nothing is filed first. The deck generator reads the source once and writes the text, the summary, and its own source brief in that single pass, and the workflow files the finished set afterwards. This removes a read that used to happen twice.
+**The default route ships and needs no setup:** the source is filed into the knowledge base first, then handed to [slides-content](../slides-content/), which runs [beamer](../beamer/) and delivers a compiled Beamer PDF (`<name>_slides.pdf`), with an optional PowerPoint conversion it offers at the end. Typing `beamer` names that route explicitly.
 
-The Beamer route and any URL target keep the file-first order, and the lite tier has always filed after. Before any handoff, the mode reads the source's provenance field and asks in plain language if the filed source is incomplete; a yes is passed to the generator as a token, so nobody has to remember one.
+**`deck` and `lite` are an optional upgrade you have to supply.** They hand off to a native PowerPoint generator, and no such skill ships in this repository. Until you wire one by name into `references/slides.md`, both tokens are refused with a message telling you to drop the token or wire a generator, rather than failing partway through a build. `headless` is the same: it needs an unattended entry point you supply.
+
+Two things the mode does on every route:
+
+- **It applies a reuse bar to an item that is already filed** (a full deep read by a strong model). At the bar, the filed text and summary are reused and nothing is re-read. Below the bar, the item is re-ingested in place first, with the old artifacts preserved as timestamped copies, so the deck is never built on a thin record.
+- **It reads the source's provenance field before any handoff and asks in plain language if the filed source is incomplete.** On the default route this ask is the only provenance gate there is, because `slides-content` and `beamer` do not read that field.
+
+**If the source came from outside the knowledge base, filing it moves it, and the mode asks first.** `kb slides ~/Documents/thesis.pdf` names the exact origin path and the exact destination and offers three answers: move it, copy it and leave the original in place, or stop without filing. A source already sitting in `aa-inbox/`, or already filed under a topic folder, files without a pause; it is not leaving a folder you keep it in.
 
 **Status (`kb status`)**
 One-screen health readout: index-versus-full-text row drift, index freshness and integrity, inbox backlog counts, and a warning when any topic folder grows past a size threshold. Read-only; no content reads and no disk walk, so it is cheap enough to run before deciding whether a maintenance pass is needed.
@@ -85,9 +91,9 @@ One-screen health readout: index-versus-full-text row drift, index freshness and
 
 ## Usage
 
-1. **Set up your knowledge base root.** Create a directory (for example, `~/knowledge-base/`) with an `aa-inbox/` subfolder inside it. Update the path in `SKILL.md` to match.
+1. **Set up your knowledge base root.** Run the commands in Installation below, then edit the root path in `SKILL.md` to match. That line in `SKILL.md` is the only place the root is configured.
 
-2. **Wire the helper commands.** `SKILL.md` has a Helper commands table naming the small scripts the skill calls: index generation, full-text search and reindex, duplicate check, status, recents rebuild, and URL capture. Each entry states its contract, including the exit codes the URL capture must return. Every place that calls one also names its fallback, so you can start with `grep -r` and add scripts later.
+2. **Wire the helper commands, or do not.** `SKILL.md` has a Helper commands table naming the small scripts the skill calls: index generation, full-text search and reindex, duplicate check, status, recents rebuild, and URL capture. Each entry states its contract, including the exit codes the URL capture must return, **and what happens if you have not built it**. Most have a real fallback (a targeted `grep` for the duplicate check, `grep -ril` for search, Claude regenerating the whole index table from the summaries' frontmatter). Two do not, and the table says so plainly: `kb status` runs at half strength, and the `aa-recents/` rebuild is skipped, which costs nothing because nothing else reads that folder. The skill is fully usable with no scripts at all.
 
 3. **Configure your summary skills.** This skill calls out to an academic summary skill and a general summary skill. Adapt the references in `SKILL.md` and `references/inbox.md` to point to whichever summary skills you use. The format template from those skills is inlined into agent prompts at runtime.
 
@@ -101,7 +107,7 @@ One-screen health readout: index-versus-full-text row drift, index freshness and
 
 8. **Find things with `kb search <query>`.** For "what do I have that touches X," run a keyword search over the body of every summary and extraction. Filters for date, type, and topic folder are available where you maintain a real index.
 
-9. **Build slides with `kb slides <target>`.** Point it at a knowledge base item, an inbox file, a path, or a URL. Add `beamer` for the Beamer route via [slides-content](../slides-content/) and [beamer](../beamer/), or `lite` for the cheap tier. Add `headless` for an unattended run with every decision auto-resolved.
+9. **Build slides with `kb slides <target>`.** Point it at a knowledge base item, an inbox file, a path, or a URL. The default builds a compiled Beamer PDF through [slides-content](../slides-content/) and [beamer](../beamer/), both of which ship here; `beamer` names that route explicitly. **Pointing it at a file outside your knowledge base will move that file into the knowledge base, and it asks before it does**, offering to copy instead or to stop. The `deck`, `lite`, and `headless` tokens need generators you supply and are refused until you wire them.
 
 10. **Check health with `kb status`.** Cheap enough to run any time; it tells you whether the index and the search database still agree and what is backed up in the inbox.
 
@@ -114,7 +120,7 @@ For each processed document, filed into `<topic>/<stem>/`:
 - One generated row in `index.md`
 - A symlink in `aa-recents/`, which holds the most recently processed items ranked by their `ingested:` date
 
-Slide builds add `_slides.pptx` (or `_slides.pdf` on the Beamer route), a review render, and a `_build/` folder, all filed into the same per-document subfolder.
+Slide builds add `_slides.pdf`, the compiled Beamer deck on the default route, and a `_build/` folder, filed into the same per-document subfolder; `slides-content` offers a `.pptx` conversion at the end, which lands there too. A deck generator you supply instead delivers `_slides.pptx` with a PDF review render beside it.
 
 The index row format:
 ```
@@ -127,13 +133,30 @@ The Summary cell is the `index_line` field from the document's own frontmatter: 
 ## Installation
 
 1. Copy this folder into `~/.claude/skills/knowledge-base/`, keeping `SKILL.md` and the `references/` subfolder together. A mode file that is missing means that mode has no procedure.
-2. Open `SKILL.md` and update the knowledge base root path (the `~/knowledge-base/` line near the top) to match where you want your knowledge base to live. Adjust the reserved-folder names (`aa-inbox/`, `aa-blog/`, `aa-recents/`) if you use different conventions.
-3. Wire the helper commands in the Helper commands table, or start with the named fallbacks and add them as you go.
-4. Adapt the references to summary skills (in `references/inbox.md` and the Integration section of `SKILL.md`) to point at whichever summary skills you have installed, or adapt them to use your own summary format.
-5. Confirm Python 3 is on your `PATH` (used for PDF text extraction).
-6. (Optional) Install the companion [knowledge-base-update](../knowledge-base-update/) skill for periodic index sync and health checks.
-7. Restart Claude Code (or run `/skills` to reload).
-8. Trigger by saying "kb," "process inbox," "kb ask <question>," or any other phrase listed under Usage.
+
+2. **Create the knowledge base itself.** Paste this whole block into Terminal. It builds every folder and file the skill needs, so the first `kb` run has somewhere legal to file things. Nothing here is optional: with no topic folder and no overflow folder, the skill has no valid destination and will not invent one, and with no `index.md`, every duplicate check errors instead of returning nothing.
+
+   ```bash
+   mkdir -p ~/knowledge-base/aa-inbox
+   mkdir -p ~/knowledge-base/aa-recents
+   mkdir -p ~/knowledge-base/other-articles
+   mkdir -p ~/knowledge-base/general
+   cd ~/knowledge-base
+   printf '| Date | Author | Title | Topic | Summary |\n|------|--------|-------|-------|---------|\n' > index.md
+   printf '# Knowledge Base Topics\n\n## general\nYour first topic folder. Rename it to something you actually read about, and rewrite this line.\n\n## other-articles\nOverflow. Anything with no clear fit is filed here and flagged in the report.\n' > topics.md
+   ```
+
+   What each one is: **`aa-inbox/`** is where you drop files to be processed. **`general/`** is your first topic folder, and you will want several; rename it and add more as you go, updating `topics.md` to match. **`other-articles/`** is the overflow folder, where anything with no clear fit lands, flagged; keep one under some name. **`aa-recents/`** holds the generated symlink view of your newest items. **`index.md`** and **`topics.md`** are the two files at the root, one generated and one you edit.
+
+   Two folders are optional and are not created above: `aa-blog/`, if you want your own writing filed alongside what you read, and `aa-slides-inbox/`, only if you build an unattended slide queue of your own.
+
+3. Open `SKILL.md` and set the knowledge base root path (the `~/knowledge-base/` line near the top) to the directory you just created. That line is the only place the root is configured. Adjust the reserved-folder names (`aa-inbox/`, `aa-blog/`, `aa-recents/`) if you used different ones.
+4. (Optional) Wire the helper commands in the Helper commands table. The skill works without them; that table says what each absence costs.
+5. Adapt the references to summary skills (in `references/inbox.md` and the Integration section of `SKILL.md`) to point at whichever summary skills you have installed, or adapt them to use your own summary format. [summary-academic](../summary-academic/) and [summary-general](../summary-general/) ship here and are what the skill assumes.
+6. Confirm Python 3 is on your `PATH` (used for PDF text extraction). Slide builds also need a working LaTeX installation, since the default slide route compiles a Beamer PDF; see [beamer](../beamer/).
+7. (Optional) Install the companion [knowledge-base-update](../knowledge-base-update/) skill for periodic index sync and health checks.
+8. Restart Claude Code (or run `/skills` to reload).
+9. Trigger by saying "kb," "process inbox," "kb ask <question>," or any other phrase listed under Usage.
 
 ## Acknowledgments
 

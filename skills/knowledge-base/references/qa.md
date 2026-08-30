@@ -6,7 +6,7 @@ Answer questions grounded in the indexed knowledge base.
 
 #### Step 1: Consult the index first (mandatory)
 
-Per the index-first gate in `SKILL.md`, start here before any folder scan. Read `topics.md` to narrow which topic folders matter, run `kb-search search <terms>` to surface full-text hits, and `grep index.md` for the question's key terms (title words, author surnames, concepts) to catch catalogued items the full-text index misses. Never read `index.md` whole into context. Only then proceed to Step 2.
+Per the index-first gate in `SKILL.md`, start here before any folder scan. Read `topics.md` to narrow which topic folders matter, run `kb-search search <terms>` to surface full-text hits (**without the script, the `grep -ril` fallback in Mode 4**, which returns unranked exact matches), and `grep index.md` for the question's key terms (title words, author surnames, concepts) to catch catalogued items the full-text index misses. Never read `index.md` whole into context. Only then proceed to Step 2.
 
 #### Step 2: Identify relevant sources
 
@@ -30,4 +30,4 @@ Offer to save the answer as a `.md` file in the knowledge base:
 
 > "Save this answer to the knowledge base? It will be saved for future reference and browsable in the file tree, but it is not indexed or searchable (it will not appear in `index.md` or `kb search`)."
 
-If accepted, save as `YYYY-MM-DD Query. [Short description]_notes.md` as its own artifact in a per-document subfolder of the most relevant topic folder (matching the Pattern A convention), beginning with the frontmatter block with `type: qa-answer` and `level: lite`, `topic:` set to the destination folder, and `tags:` defaulted to `[<topic>]`. This is a `_notes.md` artifact, not a `_summary.md`: it is not walked by the index generator or the full-text reindexer, so it never gets an `index.md` row and is not `kb search`-able.
+If accepted, save as `YYYY-MM-DD Query. [Short description]_notes.md` as its own artifact in a per-document subfolder of the most relevant topic folder (matching the Pattern A convention), beginning with the frontmatter block with `type: qa-answer` and `level: lite`, `topic:` set to the destination folder, and `tags:` defaulted to `[<topic>]`. `qa-answer` is a value of the `type:` enum in `SKILL.md`'s frontmatter block, reserved for this artifact. This is a `_notes.md` artifact, not a `_summary.md`: it is not walked by the index generator or the full-text reindexer, so it never gets an `index.md` row, is not `kb search`-able, and never appears as a `--type` filter value.
