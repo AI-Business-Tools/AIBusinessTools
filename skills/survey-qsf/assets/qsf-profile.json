@@ -1,0 +1,843 @@
+{
+  "generated": "2026-09-05",
+  "sources": [
+    "export 1",
+    "export 2",
+    "export 3",
+    "export 4",
+    "export 5"
+  ],
+  "settings_from": "export 1",
+  "note": "Derived from Qualtrics exports by profile_qsf.py --anonymize. Structure and settings only; no question, choice, or block text. Account identifiers and source filenames are blanked, so a survey built from this profile lands in the Qualtrics default theme. Re-derive without --anonymize from an export of the account being uploaded to before building a survey for that account.",
+  "schema_version": "1.1.0",
+  "account": {
+    "SurveyOwnerID": "",
+    "SurveyBrandID": "",
+    "DivisionID": null,
+    "CreatorID": "",
+    "SkinLibrary": "",
+    "Skin": "",
+    "SkinType": "",
+    "EOSMessage": "",
+    "EOSMessageLibrary": "",
+    "libraryId": "",
+    "ThankYouEmailMessageLibrary": null,
+    "ValidationMessageLibrary": null,
+    "InactiveMessageLibrary": "",
+    "Password": "",
+    "RefererURL": "",
+    "EOSRedirectURL": "",
+    "nextButtonMid": "",
+    "previousButtonMid": "",
+    "headerMid": "",
+    "footerMid": "",
+    "Header": "",
+    "Footer": "",
+    "SurveyTitle": "",
+    "ExternalCSS": null,
+    "InactiveMessage": "",
+    "SurveyName": "",
+    "ValidationMessage": null,
+    "ThankYouEmailMessage": null
+  },
+  "survey_entry_defaults": {
+    "SurveyLanguage": "EN",
+    "SurveyStatus": "Inactive",
+    "SurveyStartDate": "0000-00-00 00:00:00",
+    "SurveyExpirationDate": "0000-00-00 00:00:00",
+    "Deleted": null
+  },
+  "survey_options": {
+    "BackButton": "true",
+    "SaveAndContinue": "true",
+    "SurveyProtection": "PublicSurvey",
+    "BallotBoxStuffingPrevention": "false",
+    "OneCompletePerIP": "false",
+    "SurveyExpiration": null,
+    "SurveyTermination": "Redirect",
+    "Header": "",
+    "Footer": "",
+    "ProgressBarDisplay": "Text",
+    "PartialData": "+2 weeks",
+    "ValidationMessage": null,
+    "PreviousButton": "  <<  ",
+    "NextButton": "  >>  ",
+    "SkinLibrary": "",
+    "SkinType": "",
+    "Skin": "",
+    "EOSMessage": "",
+    "ShowExportTags": "false",
+    "SurveyTitle": "",
+    "SurveyMetaDescription": "Survey Software, Enterprise Survey software for enterprise feedback management and CRM solutions.  Enables high-quality data collection, panel management and results analysis. Perfect for market research or CRM solution (Customer Relationship Management) integration.  Free trial and consultation.",
+    "PasswordProtection": "No",
+    "AnonymizeResponse": "No",
+    "Password": "",
+    "RefererCheck": "No",
+    "NoIndex": "Yes",
+    "RefererURL": "",
+    "EOSMessageLibrary": "",
+    "EOSRedirectURL": "",
+    "EmailThankYou": "false",
+    "ThankYouEmailMessageLibrary": null,
+    "ThankYouEmailMessage": null,
+    "ValidateMessage": "false",
+    "ValidationMessageLibrary": null,
+    "InactiveSurvey": "DefaultMessage",
+    "InactiveMessageLibrary": "",
+    "InactiveMessage": "",
+    "AvailableLanguages": {
+      "EN": []
+    },
+    "SkinQuestionWidth": 700,
+    "SurveyCreationDate": "2013-01-08 13:59:45",
+    "NewScoring": 1,
+    "CollectGeoLocation": "false",
+    "SpellChecked": 0,
+    "libraryId": "",
+    "nextButtonMid": "",
+    "previousButtonMid": "",
+    "headerMid": "",
+    "footerMid": "",
+    "QuestionsPerPage": "",
+    "PageTransition": "None",
+    "ExternalCSS": null,
+    "HighlightQuestions": "off",
+    "SecureResponseFiles": "false",
+    "PartialDataCloseAfter": "LastActivity",
+    "ActiveResponseSet": null,
+    "RecaptchaV3": "false",
+    "ResponseSummary": "No",
+    "RelevantID": "false"
+  },
+  "scaffold": {
+    "PROJ": {
+      "PrimaryAttribute": "CORE",
+      "SecondaryAttribute": null,
+      "TertiaryAttribute": "1.1.0",
+      "Payload": {
+        "ProjectCategory": "CORE",
+        "SchemaVersion": "1.1.0"
+      }
+    },
+    "SCO": {
+      "PrimaryAttribute": "Scoring",
+      "SecondaryAttribute": null,
+      "TertiaryAttribute": null,
+      "Payload": {
+        "ScoringCategories": [],
+        "ScoringCategoryGroups": [],
+        "ScoringSummaryCategory": null,
+        "ScoringSummaryAfterQuestions": false,
+        "ScoringSummaryAfterSurvey": false,
+        "NextCategoryId": 1,
+        "NextGroupId": 1,
+        "DefaultScoringCategory": null,
+        "ID": "Scoring"
+      }
+    },
+    "STAT": {
+      "PrimaryAttribute": "Survey Statistics",
+      "SecondaryAttribute": null,
+      "TertiaryAttribute": null,
+      "Payload": {
+        "MobileCompatible": false,
+        "ID": "Survey Statistics"
+      }
+    }
+  },
+  "question_profiles": {
+    "TE/FORM": {
+      "count": 3,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "DataVisibility": "object",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "SearchSource": "object"
+      },
+      "optional_keys": [
+        "QuestionText_Unsafe"
+      ],
+      "required_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionType",
+        "SearchSource",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "Slider/HSLIDER": {
+      "count": 1,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionID": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "Labels": "array",
+        "QuestionText_Unsafe": "str",
+        "DataVisibility": "object",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int"
+      },
+      "optional_keys": [],
+      "required_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "Labels",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "MC/SAVR/TX": {
+      "count": 23,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "SubSelector": "str",
+        "DataVisibility": "object",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "Randomization": "object"
+      },
+      "optional_keys": [
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "QuestionText_Unsafe",
+        "Randomization"
+      ],
+      "required_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionType",
+        "Selector",
+        "SubSelector",
+        "Validation"
+      ]
+    },
+    "Matrix/Likert/SingleAnswer": {
+      "count": 18,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "object",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "SubSelector": "str",
+        "DataVisibility": "object",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Randomization": "object",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "Answers": "object",
+        "AnswerOrder": "array",
+        "ChoiceDataExportTags": "bool",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "AnswerColumns": "int"
+      },
+      "optional_keys": [
+        "AnswerColumns",
+        "QuestionText_Unsafe",
+        "Randomization"
+      ],
+      "required_keys": [
+        "AnswerOrder",
+        "Answers",
+        "ChoiceDataExportTags",
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionType",
+        "Selector",
+        "SubSelector",
+        "Validation"
+      ]
+    },
+    "TE/ESTB": {
+      "count": 11,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "DataVisibility": "object",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "SearchSource": "object",
+        "QuestionText_Safe": "str"
+      },
+      "optional_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "DataVisibility",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionText_Safe",
+        "SearchSource"
+      ],
+      "required_keys": [
+        "Configuration",
+        "DataExportTag",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "TE/SL": {
+      "count": 15,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "QuestionType": "str",
+        "Selector": "str",
+        "DataVisibility": "object",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "SearchSource": "object",
+        "QuestionText_Unsafe": "str",
+        "DataExportTag": "str",
+        "QuestionID": "str"
+      },
+      "optional_keys": [
+        "DataVisibility",
+        "SearchSource"
+      ],
+      "required_keys": [
+        "Configuration",
+        "DataExportTag",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "TE/ML": {
+      "count": 3,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "DataVisibility": "object",
+        "SearchSource": "object"
+      },
+      "optional_keys": [],
+      "required_keys": [
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "SearchSource",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "DB/TB": {
+      "count": 6,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "QuestionID": "str",
+        "DataVisibility": "object",
+        "QuestionText_Unsafe": "str"
+      },
+      "optional_keys": [
+        "QuestionText_Unsafe"
+      ],
+      "required_keys": [
+        "ChoiceOrder",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "DefaultChoices",
+        "GradingData",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionType",
+        "Selector",
+        "Validation"
+      ]
+    },
+    "MC/MAVR/TX": {
+      "count": 5,
+      "keys": {
+        "QuestionText": "str",
+        "DataExportTag": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "SubSelector": "str",
+        "DataVisibility": "object",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "QuestionID": "str",
+        "QuestionText_Unsafe": "str",
+        "Randomization": "object",
+        "DefaultChoices": "bool",
+        "GradingData": "array",
+        "AnalyzeChoices": "object"
+      },
+      "optional_keys": [
+        "AnalyzeChoices",
+        "DefaultChoices",
+        "GradingData",
+        "Randomization"
+      ],
+      "required_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "Selector",
+        "SubSelector",
+        "Validation"
+      ]
+    },
+    "MC/SACOL/TX": {
+      "count": 12,
+      "keys": {
+        "QuestionText": "str",
+        "DefaultChoices": "bool",
+        "DataExportTag": "str",
+        "QuestionID": "str",
+        "QuestionType": "str",
+        "Selector": "str",
+        "DataVisibility": "object",
+        "Configuration": "object",
+        "QuestionDescription": "str",
+        "Choices": "object",
+        "ChoiceOrder": "array",
+        "Validation": "object",
+        "GradingData": "array",
+        "Language": "array",
+        "NextChoiceId": "int",
+        "NextAnswerId": "int",
+        "SubSelector": "str",
+        "QuestionText_Unsafe": "str",
+        "AnalyzeChoices": "object"
+      },
+      "optional_keys": [
+        "AnalyzeChoices",
+        "DefaultChoices",
+        "GradingData"
+      ],
+      "required_keys": [
+        "ChoiceOrder",
+        "Choices",
+        "Configuration",
+        "DataExportTag",
+        "DataVisibility",
+        "Language",
+        "NextAnswerId",
+        "NextChoiceId",
+        "QuestionDescription",
+        "QuestionID",
+        "QuestionText",
+        "QuestionText_Unsafe",
+        "QuestionType",
+        "Selector",
+        "SubSelector",
+        "Validation"
+      ]
+    }
+  },
+  "validation_shapes": [
+    {
+      "settings": {
+        "ForceResponse": "RequestResponse",
+        "ForceResponseType": "RequestResponse",
+        "Type": "None"
+      },
+      "count": 28
+    },
+    {
+      "settings": {
+        "ForceResponse": "OFF",
+        "Type": "None"
+      },
+      "count": 23
+    },
+    {
+      "settings": {
+        "ForceResponse": "OFF",
+        "ForceResponseType": "ON",
+        "Type": "None"
+      },
+      "count": 15
+    },
+    {
+      "settings": {
+        "ForceResponse": "ON",
+        "ForceResponseType": "ON",
+        "Type": "None"
+      },
+      "count": 13
+    },
+    {
+      "settings": {
+        "ForceResponse": "OFF",
+        "ForceResponseType": "RequestResponse",
+        "Type": "None"
+      },
+      "count": 7
+    },
+    {
+      "settings": {
+        "Type": "None"
+      },
+      "count": 6
+    },
+    {
+      "settings": {
+        "ForceResponse": "RequestResponse",
+        "ForceResponseType": "RequestResponse",
+        "MaxChoices": "3",
+        "MinChoices": "1",
+        "Type": "ChoiceRange"
+      },
+      "count": 2
+    },
+    {
+      "settings": {
+        "ForceResponse": "ON",
+        "ForceResponseType": "ON"
+      },
+      "count": 1
+    },
+    {
+      "settings": {
+        "ForceResponse": "OFF"
+      },
+      "count": 1
+    },
+    {
+      "settings": {
+        "ForceResponse": "OFF",
+        "ForceResponseType": "ON"
+      },
+      "count": 1
+    }
+  ],
+  "configuration_key_sets": {
+    "TE/FORM": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 2
+      },
+      {
+        "keys": [
+          "AllowFreeResponse",
+          "QuestionDescriptionOption"
+        ],
+        "count": 1
+      }
+    ],
+    "Slider/HSLIDER": [
+      {
+        "keys": [
+          "CSSliderMax",
+          "CSSliderMin",
+          "CustomStart",
+          "GridLines",
+          "MobileFirst",
+          "NotApplicable",
+          "NumDecimals",
+          "QuestionDescriptionOption",
+          "ShowValue",
+          "SliderStartPositions",
+          "SnapToGrid"
+        ],
+        "count": 1
+      }
+    ],
+    "MC/SAVR/TX": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 19
+      },
+      {
+        "keys": [
+          "Autoscale",
+          "QuestionDescriptionOption"
+        ],
+        "count": 2
+      },
+      {
+        "keys": [
+          "QuestionDescriptionOption",
+          "TextPosition"
+        ],
+        "count": 1
+      },
+      {
+        "keys": [
+          "NumColumns",
+          "QuestionDescriptionOption",
+          "TextPosition"
+        ],
+        "count": 1
+      }
+    ],
+    "Matrix/Likert/SingleAnswer": [
+      {
+        "keys": [
+          "ChoiceColumnWidth",
+          "MobileFirst",
+          "QuestionDescriptionOption",
+          "RepeatHeaders",
+          "TextPosition",
+          "WhiteSpace"
+        ],
+        "count": 10
+      },
+      {
+        "keys": [
+          "ChoiceColumnWidth",
+          "MobileFirst",
+          "NumColumns",
+          "QuestionDescriptionOption",
+          "RepeatHeaders",
+          "TextPosition",
+          "WhiteSpace"
+        ],
+        "count": 8
+      }
+    ],
+    "TE/ESTB": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 11
+      }
+    ],
+    "TE/SL": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 15
+      }
+    ],
+    "TE/ML": [
+      {
+        "keys": [
+          "AllowFreeResponse",
+          "QuestionDescriptionOption"
+        ],
+        "count": 2
+      },
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 1
+      }
+    ],
+    "DB/TB": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 6
+      }
+    ],
+    "MC/MAVR/TX": [
+      {
+        "keys": [
+          "QuestionDescriptionOption"
+        ],
+        "count": 5
+      }
+    ],
+    "MC/SACOL/TX": [
+      {
+        "keys": [
+          "NumColumns",
+          "QuestionDescriptionOption"
+        ],
+        "count": 12
+      }
+    ]
+  },
+  "block_payload_forms": [
+    "array",
+    "dict"
+  ],
+  "block_types": [
+    "Default",
+    "Standard",
+    "Trash"
+  ],
+  "flow_node_types": [
+    "Block",
+    "EmbeddedData",
+    "Standard"
+  ]
+}
