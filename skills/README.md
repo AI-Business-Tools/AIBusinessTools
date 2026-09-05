@@ -1,6 +1,6 @@
 # Skills Catalog
 
-Each skill is a self-contained workflow that Claude Code loads on demand when your request matches its triggers. Most install by copying `SKILL.md` to `~/.claude/skills/<skill-name>/SKILL.md`; the two flagged exceptions install differently per their READMEs.
+Each skill is a self-contained workflow that Claude Code loads on demand when your request matches its triggers. Most install by copying `SKILL.md` to `~/.claude/skills/<skill-name>/SKILL.md`; the flagged exceptions install differently per their READMEs.
 
 ## Available Skills
 
@@ -11,6 +11,7 @@ Each skill is a self-contained workflow that Claude Code loads on demand when yo
 | [beamer](beamer/) | Generate, edit, audit, or convert-to-PPTX LaTeX Beamer slide decks with TikZ figures and a four-step compile-audit-fix cycle |
 | [slides-content](slides-content/) | End-to-end pipeline: source document (PDF, markdown, text) to compiled presentation slides |
 | [diagram-pdf](diagram-pdf/) | Generate standalone TikZ diagrams (pipelines, hierarchies, cycles, hub-and-spoke, thematic) compiled to PDF, with an independent audit agent |
+| [survey-qsf](survey-qsf/) *(multi-file)* | Build a Qualtrics `.qsf` import file from a survey you have written, and read an exported `.qsf` back into editable markdown |
 
 ### Analysis
 
